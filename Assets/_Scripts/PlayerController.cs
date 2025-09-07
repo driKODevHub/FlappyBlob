@@ -21,6 +21,15 @@ public class PlayerController : MonoBehaviour
     [Tooltip("Сила стрибка-хопу.")]
     [SerializeField] private float jumpForce = 12f;
 
+    [Header("Параметри інерції в повітрі")]
+    [Tooltip("Чи використовувати інерцію/опір повітря, коли немає вводу?")]
+    [SerializeField] private bool useAirInertia = true;
+
+    [Tooltip("Сила опору повітря (0 = миттєва зупинка, ~0.95 = плавне сповільнення).")]
+    [Range(0f, 1f)]
+    [SerializeField] private float airDrag = 0.95f;
+
+
     // --- Внутрішні змінні ---
     private float horizontalInput; // Зберігає значення вводу по горизонталі (-1, 0, 1)
     private bool jumpInput; // Зберігає інформацію про натискання стрибка
@@ -85,9 +94,25 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     private void HandleMovement()
     {
-        // Ми змінюємо швидкість по осі X, але зберігаємо поточну швидкість по Y (гравітація, стрибок).
-        // Це запобігає дивній поведінці фізики.
-        rb.linearVelocity = new Vector2(horizontalInput * moveSpeed, rb.linearVelocity.y);
+        // Якщо є активний ввід від гравця, встановлюємо швидкість напряму.
+        if (Mathf.Abs(horizontalInput) > 0.01f)
+        {
+            rb.linearVelocity = new Vector2(horizontalInput * moveSpeed, rb.linearVelocity.y);
+        }
+        // Якщо вводу немає, і опція інерції увімкнена.
+        else if (useAirInertia)
+        {
+            // Плавно сповільнюємо горизонтальну швидкість, створюючи ефект інерції/опору.
+            // Це буде працювати як в повітрі, так і на землі.
+            // Для майбутнього: можна додати перевірку isGrounded, щоб інерція працювала лише в повітрі.
+            float slowedVelocityX = rb.linearVelocity.x * airDrag;
+            rb.linearVelocity = new Vector2(slowedVelocityX, rb.linearVelocity.y);
+        }
+        // Якщо вводу немає, і інерція вимкнена, то зупиняємось миттєво.
+        else
+        {
+            rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
+        }
     }
 
     /// <summary>
@@ -111,4 +136,5 @@ public class PlayerController : MonoBehaviour
 
     #endregion
 }
+
 
