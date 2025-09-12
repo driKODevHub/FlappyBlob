@@ -30,9 +30,15 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float airDrag = 0.95f;
 
 
+    [Header("Ігрова логіка")]
+    [Tooltip("Стандартне значення гравітації, яке ввімкнеться після першого стрибка.")]
+    [SerializeField] private float defaultGravityScale = 3f;
+
+
     // --- Внутрішні змінні ---
     private float horizontalInput; // Зберігає значення вводу по горизонталі (-1, 0, 1)
     private bool jumpInput; // Зберігає інформацію про натискання стрибка
+    private bool isGameActive = false; // Чи почалась активна фаза гри (після першого стрибка)
 
     #region Unity Lifecycle Methods
 
@@ -47,6 +53,10 @@ public class PlayerController : MonoBehaviour
         {
             rb = GetComponent<Rigidbody2D>();
         }
+
+        // Починаємо гру з вимкненою гравітацією та "замороженим" станом
+        rb.gravityScale = 0f;
+        rb.bodyType = RigidbodyType2D.Kinematic; // Використовуємо новий, сучасний підхід
     }
 
     /// <summary>
@@ -94,6 +104,12 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     private void HandleMovement()
     {
+        // Не дозволяємо рухатись, поки гра не почалась (до першого стрибка).
+        if (!isGameActive)
+        {
+            return;
+        }
+
         // Якщо є активний ввід від гравця, встановлюємо швидкість напряму.
         if (Mathf.Abs(horizontalInput) > 0.01f)
         {
@@ -122,6 +138,14 @@ public class PlayerController : MonoBehaviour
     {
         if (jumpInput)
         {
+            // Якщо це перший стрибок, активуємо фізику та гравітацію.
+            if (!isGameActive)
+            {
+                isGameActive = true;
+                rb.bodyType = RigidbodyType2D.Dynamic; // "Розморожуємо" гравця, змінюючи тип тіла на динамічний
+                rb.gravityScale = defaultGravityScale; // Вмикаємо гравітацію
+            }
+
             // Спершу обнуляємо вертикальну швидкість. Це робить кожен стрибок-хоп
             // однаковим по висоті, незалежно від того, падав гравець чи піднімався.
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
@@ -136,5 +160,7 @@ public class PlayerController : MonoBehaviour
 
     #endregion
 }
+
+
 
 
