@@ -2,14 +2,13 @@ using UnityEngine;
 
 /// <summary>
 /// Керує рухом та основними діями гравця.
+/// Включає механіку стрибка з варіативною висотою через "зрізання" швидкості.
 /// Цей скрипт вимагає наявності компонента Rigidbody2D на тому ж ігровому об'єкті.
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerController : MonoBehaviour
 {
     // --- Компоненти та посилання ---
-    // [SerializeField] дозволяє налаштовувати приватні змінні в інспекторі Unity,
-    // що є хорошою практикою для інкапсуляції.
     [Header("Посилання на компоненти")]
     [SerializeField] private Rigidbody2D rb; // Компонент для керування фізикою
 
@@ -18,13 +17,15 @@ public class PlayerController : MonoBehaviour
     [Tooltip("Швидкість горизонтального руху гравця.")]
     [SerializeField] private float moveSpeed = 7f;
 
-    [Tooltip("Сила стрибка-хопу.")]
-    [SerializeField] private float jumpForce = 12f;
+    [Header("Параметри стрибка")]
+    [Tooltip("Вертикальна швидкість, що миттєво надається гравцю при стрибку.")]
+    [SerializeField] private float jumpVelocity = 15f;
+    [Tooltip("Множник, на який ділиться швидкість при відпусканні кнопки стрибка (напр., 0.5 = швидкість вдвічі менша).")]
+    [SerializeField] private float jumpCutMultiplier = 0.5f;
 
     [Header("Параметри інерції в повітрі")]
     [Tooltip("Чи використовувати інерцію/опір повітря, коли немає вводу?")]
     [SerializeField] private bool useAirInertia = true;
-
     [Tooltip("Сила опору повітря (0 = миттєва зупинка, ~0.95 = плавне сповільнення).")]
     [Range(0f, 1f)]
     [SerializeField] private float airDrag = 0.95f;
@@ -37,31 +38,27 @@ public class PlayerController : MonoBehaviour
 
     // --- Внутрішні змінні ---
     private float horizontalInput; // Зберігає значення вводу по горизонталі (-1, 0, 1)
-    private bool jumpInput; // Зберігає інформацію про натискання стрибка
+    private bool jumpPressed; // Зберігає інформацію про натискання стрибка
+    private bool jumpReleased; // Зберігає інформацію про відпускання кнопки стрибка
     private bool isGameActive = false; // Чи почалась активна фаза гри (після першого стрибка)
 
     #region Unity Lifecycle Methods
 
     /// <summary>
     /// Метод Awake викликається один раз при завантаженні скрипта.
-    /// Ідеальне місце для ініціалізації компонентів.
     /// </summary>
     private void Awake()
     {
-        // Намагаємося автоматично знайти компонент Rigidbody2D, якщо його не призначили вручну.
         if (rb == null)
         {
             rb = GetComponent<Rigidbody2D>();
         }
-
-        // Починаємо гру з вимкненою гравітацією та "замороженим" станом
         rb.gravityScale = 0f;
-        rb.bodyType = RigidbodyType2D.Kinematic; // Використовуємо новий, сучасний підхід
+        rb.bodyType = RigidbodyType2D.Kinematic;
     }
 
     /// <summary>
-    /// Метод Update викликається кожного кадру.
-    /// Найкраще місце для зчитування вводу від гравця (клавіатура, миша, геймпад).
+    /// Метод Update викликається кожного кадру для зчитування вводу.
     /// </summary>
     private void Update()
     {
@@ -69,8 +66,7 @@ public class PlayerController : MonoBehaviour
     }
 
     /// <summary>
-    /// Метод FixedUpdate викликається з фіксованою частотою.
-    /// Усі фізичні розрахунки та маніпуляції з Rigidbody слід робити тут для стабільності.
+    /// Метод FixedUpdate викликається з фіксованою частотою для фізичних розрахунків.
     /// </summary>
     private void FixedUpdate()
     {
@@ -84,18 +80,19 @@ public class PlayerController : MonoBehaviour
 
     /// <summary>
     /// Обробляє та зберігає ввід від користувача.
-    /// Відокремлення логіки вводу робить код чистішим.
     /// </summary>
     private void HandleInput()
     {
-        // Input.GetAxisRaw дає різкіші результати (-1, 0, 1) без згладжування,
-        // що добре підходить для платформерів.
         horizontalInput = Input.GetAxisRaw("Horizontal");
 
-        // Input.GetKeyDown спрацьовує тільки в момент натискання клавіші.
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            jumpInput = true;
+            jumpPressed = true;
+        }
+
+        if (Input.GetKeyUp(KeyCode.Space))
+        {
+            jumpReleased = true;
         }
     }
 
@@ -104,27 +101,17 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     private void HandleMovement()
     {
-        // Не дозволяємо рухатись, поки гра не почалась (до першого стрибка).
-        if (!isGameActive)
-        {
-            return;
-        }
+        if (!isGameActive) return;
 
-        // Якщо є активний ввід від гравця, встановлюємо швидкість напряму.
         if (Mathf.Abs(horizontalInput) > 0.01f)
         {
             rb.linearVelocity = new Vector2(horizontalInput * moveSpeed, rb.linearVelocity.y);
         }
-        // Якщо вводу немає, і опція інерції увімкнена.
         else if (useAirInertia)
         {
-            // Плавно сповільнюємо горизонтальну швидкість, створюючи ефект інерції/опору.
-            // Це буде працювати як в повітрі, так і на землі.
-            // Для майбутнього: можна додати перевірку isGrounded, щоб інерція працювала лише в повітрі.
             float slowedVelocityX = rb.linearVelocity.x * airDrag;
             rb.linearVelocity = new Vector2(slowedVelocityX, rb.linearVelocity.y);
         }
-        // Якщо вводу немає, і інерція вимкнена, то зупиняємось миттєво.
         else
         {
             rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
@@ -132,35 +119,39 @@ public class PlayerController : MonoBehaviour
     }
 
     /// <summary>
-    /// Виконує стрибок, якщо був відповідний ввід.
+    /// Керує логікою стрибка: пряме встановлення швидкості та "зрізання" при відпусканні.
     /// </summary>
     private void HandleJump()
     {
-        if (jumpInput)
+        // --- Початок стрибка ---
+        if (jumpPressed)
         {
-            // Якщо це перший стрибок, активуємо фізику та гравітацію.
             if (!isGameActive)
             {
                 isGameActive = true;
-                rb.bodyType = RigidbodyType2D.Dynamic; // "Розморожуємо" гравця, змінюючи тип тіла на динамічний
-                rb.gravityScale = defaultGravityScale; // Вмикаємо гравітацію
+                rb.bodyType = RigidbodyType2D.Dynamic;
+                rb.gravityScale = defaultGravityScale;
             }
 
-            // Спершу обнуляємо вертикальну швидкість. Це робить кожен стрибок-хоп
-            // однаковим по висоті, незалежно від того, падав гравець чи піднімався.
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
+            // Прямо встановлюємо вертикальну швидкість, як у твоєму старому скрипті.
+            // Це дає миттєвий та різкий "флеп", ігноруючи поточну швидкість.
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpVelocity);
+            jumpPressed = false;
+        }
 
-            // Додаємо миттєву силу вгору. ForceMode2D.Impulse ідеально підходить для стрибків.
-            rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
-
-            // Скидаємо прапорець вводу, щоб стрибок не повторювався в кожному кадрі FixedUpdate.
-            jumpInput = false;
+        // --- "Зрізання" стрибка при відпусканні кнопки ---
+        if (jumpReleased)
+        {
+            // Перевіряємо, чи гравець ще летить вгору (швидкість по Y > 0)
+            if (rb.linearVelocity.y > 0)
+            {
+                // Множимо вертикальну швидкість на наш коефіцієнт
+                rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * jumpCutMultiplier);
+            }
+            jumpReleased = false;
         }
     }
 
     #endregion
 }
-
-
-
 

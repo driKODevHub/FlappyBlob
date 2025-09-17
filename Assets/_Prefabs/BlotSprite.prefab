@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8640935159955064704}
   - component: {fileID: 1616089078037227544}
+  - component: {fileID: 6975433877763145556}
   m_Layer: 0
   m_Name: BlotSprite
   m_TagString: Untagged
@@ -55,7 +56,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+  - {fileID: 2100000, guid: e0f7f6c5cb25f344ebf6a288d15f3537, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -76,7 +77,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: 8174b068fa7b788459b03cec80d0641a, type: 3}
+  m_Sprite: {fileID: 21300000, guid: d33188f45e31ede43bb58830ae421c7a, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -87,3 +88,34 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 1
   m_SpriteSortPoint: 0
+--- !u!114 &6975433877763145556
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4352527130669492353}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 32de02299a1cc5a4a8c6f90bf6c89fef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  possibleSprites:
+  - {fileID: -7183499931325697183, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
+  - {fileID: -2649637211886876174, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
+  - {fileID: -1206291899025082017, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
+  - {fileID: -330972385653422399, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
+  - {fileID: -5110889504909173506, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
+  - {fileID: 6173678985140403211, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
+  - {fileID: -8932583670960808440, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
+  - {fileID: -8866664106573050576, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
+  - {fileID: 1904170136109496445, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
+  - {fileID: 4078626313046818272, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
+  - {fileID: -4570199832796549654, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
+  - {fileID: -7021279398672800790, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
+  - {fileID: -8882755428398681359, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
+  - {fileID: 5932681967567496506, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
+  - {fileID: -7859237781761842330, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
+  randomizeRotation: 1
+  useAppearEffect: 1
+  appearDuration: 0.35

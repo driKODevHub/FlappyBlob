@@ -34,15 +34,14 @@ public class ParticleCollisionHandler : MonoBehaviour
             // --- Спавн клякси ---
             if (splatPrefab != null)
             {
-                // Створюємо кляксу з випадковим поворотом по осі Z
-                Quaternion randomRotation = Quaternion.Euler(0f, 0f, Random.Range(0f, 360f));
-                GameObject splatInstance = Instantiate(splatPrefab, collisionEvents[i].intersection, randomRotation);
+                // Тепер префаб сам відповідає за свій вигляд (спрайт, поворот).
+                // Ми лише створюємо його в потрібному місці зі стандартним поворотом (Quaternion.identity).
+                GameObject splatInstance = Instantiate(splatPrefab, collisionEvents[i].intersection, Quaternion.identity);
 
                 // Повідомляємо менеджер про нову кляксу
                 if (SplatManager.Instance != null)
                 {
                     SplatManager.Instance.AddSplat(splatInstance);
-                    // Debug.Log("Кляксу створено і додано до менеджера!");
                 }
                 else
                 {
@@ -52,4 +51,3 @@ public class ParticleCollisionHandler : MonoBehaviour
         }
     }
 }
-
