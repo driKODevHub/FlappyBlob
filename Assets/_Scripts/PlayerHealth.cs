@@ -2,16 +2,15 @@ using UnityEngine;
 
 /// <summary>
 /// Керує здоров'ям, смертю та створенням ефектів смерті для гравця.
-/// Вимагає наявності PlayerController та Collider2D на об'єкті.
+/// (ОНОВЛЕНО): Більше не керує візуалом, а делегує це PlayerVisualController.
 /// </summary>
 [RequireComponent(typeof(PlayerController), typeof(Collider2D), typeof(Rigidbody2D))]
 public class PlayerHealth : MonoBehaviour
 {
-    [Header("Посилання")]
-    [Tooltip("Список спрайтів/рендерерів, які потрібно вимкнути при смерті.")]
-    [SerializeField] private Renderer[] playerRenderers;
-    [Tooltip("Префаб системи частинок, що спавниться при смерті.")]
-    [SerializeField] private GameObject deathParticlePrefab;
+    // --- Singleton ---
+    public static PlayerHealth Instance { get; private set; }
+
+    // --- (ВИДАЛЕНО): Посилання на рендерери та партикли ---
 
     // --- Посилання на компоненти ---
     private PlayerController playerController;
@@ -21,16 +20,20 @@ public class PlayerHealth : MonoBehaviour
 
     private void Awake()
     {
-        // Кешуємо компоненти для продуктивності
+        // Налаштування Singleton патерну
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+        }
+        else
+        {
+            Instance = this;
+        }
+
+        // Кешуємо компоненти
         playerController = GetComponent<PlayerController>();
         playerCollider = GetComponent<Collider2D>();
         rb = GetComponent<Rigidbody2D>();
-
-        // Перевірка на випадок, якщо рендерери не призначені в інспекторі
-        if (playerRenderers == null || playerRenderers.Length == 0)
-        {
-            Debug.LogWarning("У PlayerHealth не призначено жодного рендерера гравця.", this);
-        }
     }
 
     /// <summary>
@@ -38,37 +41,33 @@ public class PlayerHealth : MonoBehaviour
     /// </summary>
     public void Die()
     {
-        if (isDead) return; // Запобігаємо повторному виклику
+        if (isDead) return;
         isDead = true;
 
-        // 1. Вимикаємо всі візуальні частини гравця
-        foreach (var renderer in playerRenderers)
+        // 1. (ОНОВЛЕНО): Вимикаємо візуал через PlayerVisualController
+        if (PlayerVisualController.Instance != null)
         {
-            if (renderer != null)
-            {
-                renderer.enabled = false;
-            }
+            PlayerVisualController.Instance.PlayDeathEffect(transform.position);
         }
 
         // 2. Вимикаємо керування та фізичну колізію
         if (playerController != null) playerController.enabled = false;
         if (playerCollider != null) playerCollider.enabled = false;
 
-        // 3. Зупиняємо будь-який рух (ВИПРАВЛЕНО)
-        rb.bodyType = RigidbodyType2D.Kinematic; // Робимо тіло кінематичним, щоб воно "зависло"
-        rb.linearVelocity = Vector2.zero; // Використовуємо .linearVelocity
+        // 3. Зупиняємо будь-який рух
+        rb.bodyType = RigidbodyType2D.Kinematic;
+        rb.linearVelocity = Vector2.zero;
 
-        // 4. Спавнимо частинки
-        SpawnDeathParticles();
+        // 4. (ВИДАЛЕНО): SpawnDeathParticles()
 
-        // 5. Повідомляємо GameManager, щоб він почав респавн
+        // 5. Повідомляємо GameManager
         if (GameManager.Instance != null)
         {
             GameManager.Instance.StartRespawnProcess();
         }
         else
         {
-            Debug.LogError("GameManager не знайдено на сцені! Гравець не респавниться.", this);
+            Debug.LogError("GameManager не знайдено! Гравець не респавниться.", this);
         }
     }
 
@@ -76,19 +75,15 @@ public class PlayerHealth : MonoBehaviour
     /// **ПУБЛІЧНИЙ МЕТОД**
     /// Скидає здоров'я та візуал гравця. Викликається з GameManager.
     /// </summary>
-    /// <param name="spawnPosition">Позиція, куди треба перемістити гравця.</param>
     public void ResetPlayer(Vector3 spawnPosition)
     {
-        // 1. Переміщуємо гравця на точку спавну
+        // 1. Переміщуємо гравця
         transform.position = spawnPosition;
 
-        // 2. Вмикаємо візуал
-        foreach (var renderer in playerRenderers)
+        // 2. (ОНОВЛЕНО): Вмикаємо візуал через PlayerVisualController
+        if (PlayerVisualController.Instance != null)
         {
-            if (renderer != null)
-            {
-                renderer.enabled = true;
-            }
+            PlayerVisualController.Instance.ResetVisuals();
         }
 
         // 3. Вмикаємо колайдер
@@ -98,20 +93,5 @@ public class PlayerHealth : MonoBehaviour
         isDead = false;
     }
 
-    /// <summary>
-    /// Створює екземпляр префабу частинок смерті в позиції гравця.
-    /// </summary>
-    private void SpawnDeathParticles()
-    {
-        if (deathParticlePrefab != null)
-        {
-            // Створюємо партикли в поточній позиції гравця зі стандартним поворотом префаба
-            Instantiate(deathParticlePrefab, transform.position, deathParticlePrefab.transform.rotation);
-        }
-        else
-        {
-            Debug.LogError("Префаб частинок смерті (Death Particle Prefab) не призначено в інспекторі!", this);
-        }
-    }
+    // --- (ВИДАЛЕНО): Метод SpawnDeathParticles() ---
 }
-

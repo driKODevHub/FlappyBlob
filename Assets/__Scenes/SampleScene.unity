@@ -1212,6 +1212,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 842766054}
+  - component: {fileID: 842766058}
   - component: {fileID: 842766056}
   - component: {fileID: 842766057}
   m_Layer: 6
@@ -1355,7 +1356,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 842766053}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7e08cd56fd2838f45bb3577428403529, type: 3}
   m_Name: 
@@ -1395,6 +1396,24 @@ MonoBehaviour:
   BumpToToolbar: 0
   OtherControlsToToolbar: 0
   Axis: 1
+--- !u!114 &842766058
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 842766053}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d43fc85251ba7a64eb611527bfd9b16e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerVisualController
+  playerRenderers: []
+  deathParticlePrefab: {fileID: 8333873712351279718, guid: 2375d4ec69524964b84099eba3deccf4, type: 3}
+  mMSpringSquashAndStretch: {fileID: 842766057}
+  minMaxSquashForce: {x: 5, y: 10}
+  mMSpringRotation: {fileID: 842766056}
+  minMaxSpringRotationForce: {x: 10, y: 15}
 --- !u!1 &918270621
 GameObject:
   m_ObjectHideFlags: 0
@@ -2763,8 +2782,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7f0f6139ecf92684c8a209fb7fc3571e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
-  playerHealth: {fileID: 1691579373}
-  playerController: {fileID: 1691579370}
   respawnDelay: 2
 --- !u!4 &1572224307
 Transform:
@@ -2872,10 +2889,6 @@ MonoBehaviour:
   useAirInertia: 1
   airDrag: 0.95
   defaultGravityScale: 5
-  mMSpringSquashAndStretch: {fileID: 842766057}
-  minMaxSquashForce: {x: 20, y: 30}
-  mMSpringRotation: {fileID: 842766056}
-  minMaxSpringRotationForce: {x: 1000, y: 1500}
 --- !u!50 &1691579371
 Rigidbody2D:
   serializedVersion: 5
@@ -2951,10 +2964,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bdd5f0b85971fea4ba59e3359a3e4e10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerRenderers:
-  - {fileID: 1220923778}
-  - {fileID: 754575082}
-  deathParticlePrefab: {fileID: 8333873712351279718, guid: 2375d4ec69524964b84099eba3deccf4, type: 3}
 --- !u!114 &1691579374
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2967,8 +2976,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5f4c64ed31be7314891a1fe832baafb3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCollisionHandler
-  playerHealth: {fileID: 1691579373}
-  playerController: {fileID: 1691579370}
   obstacleLayer:
     serializedVersion: 2
     m_Bits: 256

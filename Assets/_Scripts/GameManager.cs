@@ -2,28 +2,22 @@ using UnityEngine;
 
 /// <summary>
 /// Керує загальним станом гри, зокрема життєвим циклом гравця (респавн).
-/// Це Singleton, до якого можна звернутись з будь-якого скрипта.
+/// (ОНОВЛЕНО): Використовує Singleton-и для доступу до PlayerHealth та PlayerController.
 /// </summary>
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
-    [Header("Посилання на гравця")]
-    [Tooltip("Посилання на скрипт PlayerHealth гравця.")]
-    [SerializeField] private PlayerHealth playerHealth;
-    [Tooltip("Посилання на скрипт PlayerController гравця.")]
-    [SerializeField] private PlayerController playerController;
+    // --- (ВИДАЛЕНО): Посилання на PlayerHealth та PlayerController ---
 
     [Header("Налаштування респавну")]
     [Tooltip("Час в секундах, через який гравець респавниться після смерті.")]
     [SerializeField] private float respawnDelay = 2.0f;
 
-    // --- Внутрішні змінні ---
-    private Vector3 spawnPoint; // Позиція, де гравець почав гру
+    private Vector3 spawnPoint;
 
     private void Awake()
     {
-        // Налаштування Singleton патерну
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -33,41 +27,46 @@ public class GameManager : MonoBehaviour
             Instance = this;
         }
 
-        // Перевірка, чи призначені посилання на гравця
-        if (playerHealth == null || playerController == null)
-        {
-            Debug.LogError("GameManager: Посилання на PlayerHealth або PlayerController не встановлено в інспекторі!", this);
-        }
+        // (ВИДАЛЕНО): Перевірка посилань
     }
 
     private void Start()
     {
-        // Зберігаємо початкову позицію гравця як точку респавну
-        if (playerHealth != null)
+        // (ОНОВЛЕНО): Отримуємо позицію через Singleton
+        if (PlayerController.Instance != null)
         {
-            spawnPoint = playerHealth.transform.position;
+            spawnPoint = PlayerController.Instance.transform.position;
+        }
+        else
+        {
+            Debug.LogError("GameManager: Не можу знайти PlayerController.Instance при старті!", this);
         }
     }
 
-    /// <summary>
-    /// **ПУБЛІЧНИЙ МЕТОД**
-    /// Запускає процес респавну (викликається з PlayerHealth).
-    /// </summary>
     public void StartRespawnProcess()
     {
-        // Викликаємо метод RespawnPlayer через 'respawnDelay' секунд
         Invoke(nameof(RespawnPlayer), respawnDelay);
     }
 
-    /// <summary>
-    /// Скидає стан гравця і повертає його на точку спавну.
-    /// </summary>
     private void RespawnPlayer()
     {
-        if (playerHealth == null || playerController == null) return;
+        // (ОНОВЛЕНО): Викликаємо методи через Singleton-и
+        if (PlayerHealth.Instance != null)
+        {
+            PlayerHealth.Instance.ResetPlayer(spawnPoint);
+        }
+        else
+        {
+            Debug.LogError("GameManager: PlayerHealth.Instance не знайдено! Не можу ресетнути здоров'я.", this);
+        }
 
-        // 1. Викликаємо методи "скидання" на кожному компоненті гравця
-        playerHealth.ResetPlayer(spawnPoint);
-        playerController.ResetPlayer();
+        if (PlayerController.Instance != null)
+        {
+            PlayerController.Instance.ResetPlayer();
+        }
+        else
+        {
+            Debug.LogError("GameManager: PlayerController.Instance не знайдено! Не можу ресетнути контролер.", this);
+        }
     }
 }
