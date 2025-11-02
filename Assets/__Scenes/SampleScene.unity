@@ -1248,7 +1248,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 842766053}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 77e19943fc6c12249aa90e2f613265ad, type: 3}
   m_Name: 
@@ -1356,7 +1356,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 842766053}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7e08cd56fd2838f45bb3577428403529, type: 3}
   m_Name: 
@@ -1408,12 +1408,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d43fc85251ba7a64eb611527bfd9b16e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerVisualController
-  playerRenderers: []
+  playerRenderers:
+  - {fileID: 754575082}
+  - {fileID: 1220923778}
+  - {fileID: 948181324}
+  - {fileID: 209271715}
+  - {fileID: 981585213}
+  - {fileID: 1557988001}
+  - {fileID: 1051791335}
+  - {fileID: 249294431}
   deathParticlePrefab: {fileID: 8333873712351279718, guid: 2375d4ec69524964b84099eba3deccf4, type: 3}
   mMSpringSquashAndStretch: {fileID: 842766057}
-  minMaxSquashForce: {x: 5, y: 10}
+  minMaxSquashForce: {x: 20, y: 30}
   mMSpringRotation: {fileID: 842766056}
-  minMaxSpringRotationForce: {x: 10, y: 15}
+  minMaxSpringRotationForce: {x: 1000, y: 1500}
+  collisionPivot: {fileID: 1791125994}
+  impactSquashAmount: 0.6
+  impactStretchAmount: 1.6
+  impactAnimationDuration: 0.13
+  minImpactSpeed: 1
+  maxImpactSpeed: 15
 --- !u!1 &918270621
 GameObject:
   m_ObjectHideFlags: 0
@@ -2868,6 +2882,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 842766054}
+  - {fileID: 1791125994}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1691579370
@@ -2886,9 +2901,11 @@ MonoBehaviour:
   moveSpeed: 7
   jumpVelocity: 22
   jumpCutMultiplier: 0.65
-  useAirInertia: 1
+  useAirInertIA: 1
   airDrag: 0.95
   defaultGravityScale: 5
+  bounciness: 0.6
+  knockbackLockoutDuration: 0.2
 --- !u!50 &1691579371
 Rigidbody2D:
   serializedVersion: 5
@@ -2984,6 +3001,37 @@ MonoBehaviour:
     m_Bits: 128
   splatPrefab: {fileID: 4352527130669492353, guid: e5324b9c8c3ef284aa0a8df0b5f53a71, type: 3}
   wallSplatCooldown: 0.2
+--- !u!1 &1791125993
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1791125994}
+  m_Layer: 6
+  m_Name: CollisionPivot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1791125994
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1791125993}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1691579369}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1811509023
 GameObject:
   m_ObjectHideFlags: 0

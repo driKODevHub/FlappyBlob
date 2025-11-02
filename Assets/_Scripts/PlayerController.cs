@@ -1,10 +1,10 @@
 using MoreMountains.Feedbacks;
 using UnityEngine;
+using System.Collections; // Р”РѕРґР°РЅРѕ РґР»СЏ РєРѕСЂСѓС‚РёРЅ
 
 /// <summary>
-/// Керує рухом та основними діями гравця.
-/// (ОНОВЛЕНО): Більше не керує візуальними ефектами, 
-/// а лише викликає PlayerVisualController.
+/// РљРµСЂСѓС” СЂСѓС…РѕРј С‚Р° РѕСЃРЅРѕРІРЅРёРјРё РґС–СЏРјРё РіСЂР°РІС†СЏ.
+/// (РћРќРћР’Р›Р•РќРћ): РўРµРїРµСЂ Р±Р»РѕРєСѓС” РєРµСЂСѓРІР°РЅРЅСЏ СЂСѓС…РѕРј РЅР° РєРѕСЂРѕС‚РєРёР№ С‡Р°СЃ РїС–СЃР»СЏ РІС–РґСЃРєРѕРєСѓ.
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerController : MonoBehaviour
@@ -12,57 +12,50 @@ public class PlayerController : MonoBehaviour
     // --- Singleton ---
     public static PlayerController Instance { get; private set; }
 
-    // --- Компоненти та посилання ---
-    [Header("Посилання на компоненти")]
+    [Header("РџРѕСЃРёР»Р°РЅРЅСЏ РЅР° РєРѕРјРїРѕРЅРµРЅС‚Рё")]
     [SerializeField] private Rigidbody2D rb;
 
-    // --- Налаштування руху ---
-    [Header("Параметри руху")]
-    [Tooltip("Швидкість горизонтального руху гравця.")]
+    [Header("РџР°СЂР°РјРµС‚СЂРё СЂСѓС…Сѓ")]
     [SerializeField] private float moveSpeed = 7f;
 
-    [Header("Параметри стрибка")]
-    [Tooltip("Вертикальна швидкість, що миттєво надається гравцю при стрибку.")]
+    [Header("РџР°СЂР°РјРµС‚СЂРё СЃС‚СЂРёР±РєР°")]
     [SerializeField] private float jumpVelocity = 15f;
-    [Tooltip("Множник, на який ділиться швидкість при відпусканні кнопки стрибка (напр., 0.5 = швидкість вдвічі менша).")]
     [SerializeField] private float jumpCutMultiplier = 0.5f;
 
-    [Header("Параметри інерції в повітрі")]
-    [Tooltip("Чи використовувати інерцію/опір повітря, коли немає вводу?")]
-    [SerializeField] private bool useAirInertia = true;
-    [Tooltip("Сила опору повітря (0 = миттєва зупинка, ~0.95 = плавне сповільнення).")]
+    [Header("РџР°СЂР°РјРµС‚СЂРё С–РЅРµСЂС†С–С— РІ РїРѕРІС–С‚СЂС–")]
+    [SerializeField] private bool useAirInertIA = true;
     [Range(0f, 1f)]
     [SerializeField] private float airDrag = 0.95f;
 
-    [Tooltip("Стандартне значення гравітації, яке ввімкнеться після першого стрибка.")]
     [SerializeField] private float defaultGravityScale = 3f;
 
-    // --- Внутрішні змінні ---
+    [Header("РќР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ Р’С–РґСЃРєРѕРєСѓ (Р‘Р°СѓРЅСЃСѓ)")]
+    [Tooltip("РЎРёР»Р° РІС–РґСЃРєРѕРєСѓ РІС–Рґ СЃС‚С–РЅ. 1 = С–РґРµР°Р»СЊРЅРµ РІС–РґР±РёС‚С‚СЏ, 0.6 = 60% РµРЅРµСЂРіС–С— РїРѕРІРµСЂС‚Р°С”С‚СЊСЃСЏ.")]
+    [Range(0f, 1.5f)]
+    [SerializeField] private float bounciness = 0.6f;
+
+    // (РќРћР’Р•):
+    [Tooltip("Р§Р°СЃ (РІ СЃРµРєСѓРЅРґР°С…), РЅР° СЏРєРёР№ Р±Р»РѕРєСѓС”С‚СЊСЃСЏ РєРµСЂСѓРІР°РЅРЅСЏ Р РЈРҐРћРњ (РІР»С–РІРѕ/РІРїСЂР°РІРѕ) РїС–СЃР»СЏ СѓРґР°СЂСѓ РѕР± СЃС‚С–РЅСѓ.")]
+    [SerializeField] private float knockbackLockoutDuration = 0.2f;
+
+    // --- Р’РЅСѓС‚СЂС–С€РЅС– Р·РјС–РЅРЅС– ---
     private float horizontalInput;
     private bool jumpPressed;
     private bool jumpReleased;
     private bool isGameActive = false;
+    private Vector2 lastFixedUpdateVelocity;
 
-    // --- (ВИДАЛЕНО): Усі посилання на MMFeedbacks ---
+    // (РќРћР’Р•): РўР°Р№РјРµСЂ, С‰Рѕ РІС–РґСЂР°С…РѕРІСѓС” С‡Р°СЃ Р±Р»РѕРєСѓРІР°РЅРЅСЏ
+    private float knockbackLockoutTimer;
 
     #region Unity Lifecycle Methods
 
     private void Awake()
     {
-        // Налаштування Singleton патерну
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-        }
-        else
-        {
-            Instance = this;
-        }
+        if (Instance != null && Instance != this) Destroy(gameObject);
+        else Instance = this;
 
-        if (rb == null)
-        {
-            rb = GetComponent<Rigidbody2D>();
-        }
+        if (rb == null) rb = GetComponent<Rigidbody2D>();
         ResetPlayer();
     }
 
@@ -73,6 +66,16 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
+        // (РќРћР’Р•): РћРЅРѕРІР»СЋС”РјРѕ С‚Р°Р№РјРµСЂ Р±Р»РѕРєСѓРІР°РЅРЅСЏ
+        if (knockbackLockoutTimer > 0)
+        {
+            knockbackLockoutTimer -= Time.fixedDeltaTime;
+        }
+
+        // (Р’РРџР РђР’Р›Р•РќРћ): Р’РёРєРѕСЂРёСЃС‚РѕРІСѓС”РјРѕ linearVelocity
+        // Р—Р±РµСЂС–РіР°С”РјРѕ С€РІРёРґРєС–СЃС‚СЊ Р”Рћ С‚РѕРіРѕ, СЏРє РјРё С—С— Р·РјС–РЅРёРјРѕ РІ С†СЊРѕРјСѓ РєР°РґСЂС–
+        lastFixedUpdateVelocity = rb.linearVelocity;
+
         HandleMovement();
         HandleJump();
     }
@@ -87,10 +90,30 @@ public class PlayerController : MonoBehaviour
         rb.bodyType = RigidbodyType2D.Kinematic;
         rb.gravityScale = 0f;
         rb.linearVelocity = Vector2.zero;
+        lastFixedUpdateVelocity = Vector2.zero;
         horizontalInput = 0f;
         jumpPressed = false;
         jumpReleased = false;
+        knockbackLockoutTimer = 0f; // (РќРћР’Р•): РЎРєРёРґР°С”РјРѕ С‚Р°Р№РјРµСЂ
         this.enabled = true;
+    }
+
+    /// <summary>
+    /// **РџРЈР‘Р›Р†Р§РќРР™ РњР•РўРћР”**
+    /// Р—Р°СЃС‚РѕСЃРѕРІСѓС” С„С–Р·РёС‡РЅРёР№ РІС–РґСЃРєРѕРє РґРѕ Rigidbody.
+    /// (РћРќРћР’Р›Р•РќРћ): РўР°РєРѕР¶ Р°РєС‚РёРІСѓС” С‚Р°Р№РјРµСЂ Р±Р»РѕРєСѓРІР°РЅРЅСЏ СЂСѓС…Сѓ.
+    /// </summary>
+    public void ApplyWallBounce(Vector2 contactNormal)
+    {
+        // Р’РёРєРѕСЂРёСЃС‚РѕРІСѓС”РјРѕ Vector2.Reflect, С‰РѕР± СЂРѕР·СЂР°С…СѓРІР°С‚Рё РЅРѕРІРёР№ РЅР°РїСЂСЏРјРѕРє
+        Vector2 reflectedVelocity = Vector2.Reflect(lastFixedUpdateVelocity, contactNormal);
+
+        // (Р’РРџР РђР’Р›Р•РќРћ): Р’РёРєРѕСЂРёСЃС‚РѕРІСѓС”РјРѕ linearVelocity
+        // Р—Р°СЃС‚РѕСЃРѕРІСѓС”РјРѕ РЅРѕРІСѓ С€РІРёРґРєС–СЃС‚СЊ Р· СѓСЂР°С…СѓРІР°РЅРЅСЏРј "РїСЂСѓР¶РЅРѕСЃС‚С–"
+        rb.linearVelocity = reflectedVelocity * bounciness;
+
+        // (РќРћР’Р•): Р’СЃС‚Р°РЅРѕРІР»СЋС”РјРѕ С‚Р°Р№РјРµСЂ Р±Р»РѕРєСѓРІР°РЅРЅСЏ
+        knockbackLockoutTimer = knockbackLockoutDuration;
     }
 
     #endregion
@@ -99,38 +122,47 @@ public class PlayerController : MonoBehaviour
 
     private void HandleInput()
     {
+        // (РћРќРћР’Р›Р•РќРћ): Р—С‡РёС‚СѓС”РјРѕ РІРІС–Рґ, РЅР°РІС–С‚СЊ СЏРєС‰Рѕ СЂСѓС… Р·Р°Р±Р»РѕРєРѕРІР°РЅРѕ,
+        // С‰РѕР± РЅРµ "РІС‚СЂР°С‚РёС‚Рё" РЅР°С‚РёСЃРєР°РЅРЅСЏ СЃС‚СЂРёР±РєР°.
         horizontalInput = Input.GetAxisRaw("Horizontal");
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            jumpPressed = true;
-        }
-        if (Input.GetKeyUp(KeyCode.Space))
-        {
-            jumpReleased = true;
-        }
+        if (Input.GetKeyDown(KeyCode.Space)) jumpPressed = true;
+        if (Input.GetKeyUp(KeyCode.Space)) jumpReleased = true;
     }
 
     private void HandleMovement()
     {
+        // (РќРћР’Р•): РЇРєС‰Рѕ РјРё РІ СЃС‚Р°РЅС– "РєРЅРѕРєР±РµРєСѓ", С–РіРЅРѕСЂСѓС”РјРѕ РІРІС–Рґ
+        // С– РЅРµ Р·Р°СЃС‚РѕСЃРѕРІСѓС”РјРѕ РѕРїС–СЂ РїРѕРІС–С‚СЂСЏ (airDrag).
+        if (knockbackLockoutTimer > 0)
+        {
+            return;
+        }
+
         if (!isGameActive) return;
 
+        // (Р¦С– СЂСЏРґРєРё РІР¶Рµ РІРёРєРѕСЂРёСЃС‚РѕРІСѓРІР°Р»Рё linearVelocity С– Р±СѓР»Рё РєРѕСЂРµРєС‚РЅС–)
         if (Mathf.Abs(horizontalInput) > 0.01f)
         {
+            // (Р’РРџР РђР’Р›Р•РќРћ)
             rb.linearVelocity = new Vector2(horizontalInput * moveSpeed, rb.linearVelocity.y);
         }
-        else if (useAirInertia)
+        else if (useAirInertIA)
         {
             float slowedVelocityX = rb.linearVelocity.x * airDrag;
+            // (Р’РРџР РђР’Р›Р•РќРћ)
             rb.linearVelocity = new Vector2(slowedVelocityX, rb.linearVelocity.y);
         }
         else
         {
+            // (Р’РРџР РђР’Р›Р•РќРћ)
             rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
         }
     }
 
     private void HandleJump()
     {
+        // Р›РѕРіС–РєР° СЃС‚СЂРёР±РєР° Р·Р°Р»РёС€Р°С”С‚СЊСЃСЏ РЅРµР·Р°Р»РµР¶РЅРѕСЋ РІС–Рґ Р±Р»РѕРєСѓРІР°РЅРЅСЏ СЂСѓС…Сѓ
+
         if (jumpPressed)
         {
             if (!isGameActive)
@@ -142,12 +174,10 @@ public class PlayerController : MonoBehaviour
 
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpVelocity);
 
-            // --- (ОНОВЛЕНО): Делегуємо візуальний ефект ---
             if (PlayerVisualController.Instance != null)
             {
                 PlayerVisualController.Instance.PlayJumpEffect();
             }
-            // --- ---
 
             jumpPressed = false;
         }
@@ -164,3 +194,4 @@ public class PlayerController : MonoBehaviour
 
     #endregion
 }
+
