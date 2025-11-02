@@ -1,59 +1,107 @@
 using UnityEngine;
+using System.Collections; // Потрібно для корутин
 using System.Collections.Generic;
 
 /// <summary>
-/// Керує кількістю клякс на сцені, щоб уникнути проблем з продуктивністю.
-/// Видаляє найстаріші клякси, коли досягнуто ліміту.
+/// Керує кількістю клякс на сцені.
+/// (ОНОВЛЕНО): Використовує корутину для плавного "хвильового" видалення старих клякс.
 /// </summary>
 public class SplatManager : MonoBehaviour
 {
-    // Singleton патерн, щоб до скрипта можна було легко звернутись з будь-якого іншого місця.
     public static SplatManager Instance { get; private set; }
 
     [Header("Налаштування оптимізації")]
     [Tooltip("Максимальна кількість клякс, що можуть одночасно існувати на сцені.")]
     [SerializeField] private int maxSplats = 150;
 
-    // Використовуємо чергу (Queue), щоб легко відстежувати, яка клякса найстаріша.
-    // Перший, хто зайшов - перший, хто вийде.
-    private Queue<GameObject> splatsQueue = new Queue<GameObject>();
+    [Header("Налаштування Зникнення")] // (НОВИЙ РОЗДІЛ)
+    [Tooltip("Затримка (в сек.) між початком зникнення кожної 'зайвої' клякси. Створює ефект хвилі.")]
+    [SerializeField] private float waveFadeOutDelay = 0.05f;
+
+    private Queue<SplatAppearance> splatsQueue = new Queue<SplatAppearance>();
+    private Coroutine queueManagerCoroutine; // (НОВЕ)
 
     private void Awake()
     {
-        // Реалізація Singleton патерну
         if (Instance != null && Instance != this)
         {
-            // Якщо екземпляр вже існує, знищуємо цей дублікат.
             Destroy(gameObject);
         }
         else
         {
-            // Якщо екземпляра ще немає, робимо цей об'єкт головним.
             Instance = this;
+        }
+    }
+
+    // (НОВИЙ МЕТОД)
+    private void Start()
+    {
+        // Запускаємо корутину, яка буде жити вічно і слідкувати за чергою
+        queueManagerCoroutine = StartCoroutine(ManageSplatQueue());
+    }
+
+    // (НОВИЙ МЕТОД)
+    private void OnDestroy()
+    {
+        // Гарна практика - зупиняти корутини при знищенні об'єкта
+        if (queueManagerCoroutine != null)
+        {
+            StopCoroutine(queueManagerCoroutine);
         }
     }
 
     /// <summary>
     /// **ПУБЛІЧНИЙ МЕТОД**
-    /// Додає нову кляксу до системи відстеження.
-    /// Якщо ліміт перевищено, видаляє найстарішу кляксу.
+    /// (ОНОВЛЕНО): Тепер *тільки* додає кляксу в чергу. 
+    /// Видаленням займається корутина.
     /// </summary>
-    /// <param name="splatInstance">Ігровий об'єкт клякси, яку потрібно додати.</param>
     public void AddSplat(GameObject splatInstance)
     {
-        // Якщо кількість клякс досягла або перевищила ліміт, починаємо видаляти старі.
-        while (splatsQueue.Count >= maxSplats)
+        SplatAppearance splat = splatInstance.GetComponent<SplatAppearance>();
+        if (splat == null)
         {
-            // Видаляємо найстарішу кляксу зі сцени
-            GameObject oldestSplat = splatsQueue.Dequeue(); // Витягуємо найперший доданий елемент з черги.
-            if (oldestSplat != null)
-            {
-                Destroy(oldestSplat);
-            }
+            Debug.LogWarning("SplatManager: Доданий об'єкт не має компонента SplatAppearance!", splatInstance);
+            Destroy(splatInstance);
+            return;
         }
 
-        // Додаємо нову кляксу в кінець черги
-        splatsQueue.Enqueue(splatInstance);
+        // (ОНОВЛЕНО): Ми більше не видаляємо клякси тут.
+        // Ми просто додаємо нову. Корутина 'ManageSplatQueue' зробить все інше.
+        splatsQueue.Enqueue(splat);
+    }
+
+    // (НОВА КОРУТИНА)
+    /// <summary>
+    /// Ця корутина постійно працює у фоновому режимі,
+    /// перевіряючи, чи не перевищено ліміт клякс.
+    /// </summary>
+    private IEnumerator ManageSplatQueue()
+    {
+        // Вічний цикл
+        while (true)
+        {
+            // Перевіряємо, чи кількість клякс в черзі *перевищує* ліміт
+            if (splatsQueue.Count > maxSplats)
+            {
+                // Ліміт перевищено, видаляємо одну (найстарішу)
+                SplatAppearance oldestSplat = splatsQueue.Dequeue();
+                if (oldestSplat != null)
+                {
+                    // Запускаємо її зникнення
+                    oldestSplat.StartFadeOutAndDestroy();
+                }
+
+                // (ГОЛОВНА ЗМІНА): Чекаємо 'waveFadeOutDelay' секунд
+                // перед тим, як повернутись на початок циклу і перевірити/видалити НАСТУПНУ кляксу.
+                yield return new WaitForSeconds(waveFadeOutDelay);
+            }
+            else
+            {
+                // Якщо ліміт не перевищено, просто чекаємо наступного кадру.
+                // Це ефективно і не навантажує процесор.
+                yield return null;
+            }
+        }
     }
 }
 

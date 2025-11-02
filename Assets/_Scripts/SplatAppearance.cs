@@ -3,8 +3,7 @@ using UnityEngine;
 
 /// <summary>
 /// Керує візуальною частиною клякси: вибирає випадковий спрайт,
-/// задає поворот/масштаб та анімує появу через шейдер "розчинення".
-/// **Після появи замінює матеріал на постійний (finalMaterial) для оптимізації.**
+/// задає поворот/масштаб та анімує появу/зникнення через шейдер "розчинення".
 /// </summary>
 [RequireComponent(typeof(SpriteRenderer))]
 public class SplatAppearance : MonoBehaviour
@@ -30,18 +29,22 @@ public class SplatAppearance : MonoBehaviour
     [SerializeField] private float maxScale = 1.0f;
 
 
-    [Header("Налаштування ефекту появи")]
+    [Header("Налаштування ефектів")]
     [Tooltip("Чи використовувати ефект появи через шейдер?")]
     [SerializeField] private bool useAppearEffect = true;
     [Tooltip("Час в секундах, за який клякса повністю з'явиться.")]
     [SerializeField] private float appearDuration = 0.5f;
     [Tooltip("Матеріал, який буде встановлено *після* завершення ефекту появи (для оптимізації).")]
-    [SerializeField] private Material finalMaterial; // (ЗАМІНЕНО)
+    [SerializeField] private Material finalMaterial;
+    [Tooltip("Час в секундах, за який клякса зникне (при видаленні).")]
+    [SerializeField] private float fadeOutDuration = 0.3f; // (НОВЕ)
 
     // --- Внутрішні змінні ---
     private SpriteRenderer spriteRenderer;
-    private Material materialInstance; // Це буде інстанс матеріалу для "розчинення"
+    private Material originalFadeMaterialAsset; // (НОВЕ) Зберігаємо оригінальний матеріал
+    private Material materialInstance; // Інстанс для АНІМАЦІЇ
     private static readonly int FadePropertyID = Shader.PropertyToID("_Fade");
+    private bool isFadingOut = false; // (НОВЕ) Запобіжник від подвійного виклику
 
     private void Awake()
     {
@@ -74,8 +77,12 @@ public class SplatAppearance : MonoBehaviour
         // --- 4. Підготовка до ефекту появи --- (ОНОВЛЕНО)
         if (useAppearEffect)
         {
-            // Створюємо унікальну копію матеріалу для анімації "розчинення"
-            materialInstance = spriteRenderer.material;
+            // (ОНОВЛЕНО): Зберігаємо посилання на оригінальний матеріал (який має шейдер)
+            originalFadeMaterialAsset = spriteRenderer.material;
+            // Створюємо унікальну копію (інстанс) цього матеріалу для анімації "розчинення"
+            materialInstance = new Material(originalFadeMaterialAsset);
+            // Призначаємо інстанс рендереру
+            spriteRenderer.material = materialInstance;
         }
         else if (finalMaterial != null)
         {
@@ -87,7 +94,8 @@ public class SplatAppearance : MonoBehaviour
     private void Start()
     {
         // --- 5. Запуск корутини появи ---
-        if (useAppearEffect && materialInstance != null)
+        // (ОНОВЛЕНО): Перевіряємо originalFadeMaterialAsset
+        if (useAppearEffect && materialInstance != null && originalFadeMaterialAsset != null)
         {
             StartCoroutine(AppearCoroutine());
         }
@@ -112,14 +120,69 @@ public class SplatAppearance : MonoBehaviour
         // Гарантуємо, що клякса повністю видима
         materialInstance.SetFloat(FadePropertyID, 1f);
 
-        // --- 6. Заміна матеріалу --- (ОНОВЛЕНО)
+        // --- 6. Заміна матеріалу ---
         if (finalMaterial != null)
         {
-            // Повністю замінюємо матеріал на SpriteRenderer
-            // "materialInstance", який ми анімували, буде автоматично знищено, 
-            // оскільки він більше не прив'язаний до рендерера.
             spriteRenderer.material = finalMaterial;
         }
+
+        // (ОНОВЛЕНО): Ми більше не потребуємо інстанс для появи, 
+        // але 'materialInstance' автоматично очиститься, 
+        // оскільки ми зберегли 'originalFadeMaterialAsset'
+    }
+
+    // --- (НОВИЙ МЕТОД) ---
+    /// <summary>
+    /// **ПУБЛІЧНИЙ МЕТОД**
+    /// Запускає корутину зникнення (fade-out) і подальшого знищення об'єкта.
+    /// </summary>
+    public void StartFadeOutAndDestroy()
+    {
+        if (isFadingOut) return; // Вже зникаємо
+        isFadingOut = true;
+
+        // Перевіряємо, чи є в нас матеріал для "зникнення"
+        if (originalFadeMaterialAsset != null)
+        {
+            StartCoroutine(FadeOutCoroutine());
+        }
+        else
+        {
+            // Якщо матеріалу немає, просто знищуємо об'єкт
+            Destroy(gameObject);
+        }
+    }
+
+    // --- (НОВА КОРУТИНА) ---
+    /// <summary>
+    /// Корутина, що плавно змінює значення "_Fade" від 1 до 0 для зникнення.
+    /// </summary>
+    private IEnumerator FadeOutCoroutine()
+    {
+        // 1. Створюємо НОВИЙ інстанс матеріалу для зникнення
+        // (Ми не можемо використати 'finalMaterial', бо в ньому немає шейдера _Fade)
+        Material fadeOutInstance = new Material(originalFadeMaterialAsset);
+
+        // 2. Встановлюємо його повністю видимим
+        fadeOutInstance.SetFloat(FadePropertyID, 1f);
+
+        // 3. Призначаємо цей матеріал рендереру (замінюючи 'finalMaterial')
+        spriteRenderer.material = fadeOutInstance;
+
+        // 4. Анімуємо зникнення
+        float elapsedTime = 0f;
+        while (elapsedTime < fadeOutDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            float fadeValue = Mathf.Lerp(1f, 0f, elapsedTime / fadeOutDuration);
+            fadeOutInstance.SetFloat(FadePropertyID, fadeValue);
+            yield return null;
+        }
+
+        // 5. Гарантуємо повне зникнення
+        fadeOutInstance.SetFloat(FadePropertyID, 0f);
+
+        // 6. Знищуємо сам об'єкт клякси
+        Destroy(gameObject);
     }
 }
-
