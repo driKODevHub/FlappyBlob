@@ -28,7 +28,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 3, y: 3, z: 3}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
@@ -53,6 +53,8 @@ SpriteRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -74,11 +76,12 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: d33188f45e31ede43bb58830ae421c7a, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.9254902, g: 0.7254902, b: 0.2, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -101,21 +104,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   possibleSprites:
-  - {fileID: -7183499931325697183, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
-  - {fileID: -2649637211886876174, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
-  - {fileID: -1206291899025082017, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
-  - {fileID: -330972385653422399, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
-  - {fileID: -5110889504909173506, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
-  - {fileID: 6173678985140403211, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
-  - {fileID: -8932583670960808440, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
-  - {fileID: -8866664106573050576, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
-  - {fileID: 1904170136109496445, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
-  - {fileID: 4078626313046818272, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
-  - {fileID: -4570199832796549654, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
-  - {fileID: -7021279398672800790, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
-  - {fileID: -8882755428398681359, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
-  - {fileID: 5932681967567496506, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
-  - {fileID: -7859237781761842330, guid: e814ac11c1cf5df46be6a2f991ac031c, type: 3}
-  randomizeRotation: 1
+  - {fileID: 21300000, guid: d33188f45e31ede43bb58830ae421c7a, type: 3}
+  - {fileID: 21300000, guid: ae4dc46ba88d99c4f8efa43be3e49d3f, type: 3}
+  useRandomRotation: 1
+  minRotation: 0
+  maxRotation: 360
+  useRandomScale: 1
+  minScale: 0.7
+  maxScale: 1.2
   useAppearEffect: 1
-  appearDuration: 0.35
+  appearDuration: 0.2

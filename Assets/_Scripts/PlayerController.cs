@@ -1,3 +1,4 @@
+using MoreMountains.Feedbacks;
 using UnityEngine;
 
 /// <summary>
@@ -31,7 +32,6 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float airDrag = 0.95f;
 
 
-    [Header("Ігрова логіка")]
     [Tooltip("Стандартне значення гравітації, яке ввімкнеться після першого стрибка.")]
     [SerializeField] private float defaultGravityScale = 3f;
 
@@ -41,6 +41,13 @@ public class PlayerController : MonoBehaviour
     private bool jumpPressed; // Зберігає інформацію про натискання стрибка
     private bool jumpReleased; // Зберігає інформацію про відпускання кнопки стрибка
     private bool isGameActive = false; // Чи почалась активна фаза гри (після першого стрибка)
+
+    [Header("Jump MMFeedback info")]
+    [SerializeField] private MMSpringScale mMSpringScale;
+    [SerializeField] private Vector3 bumpAmoutnMin, bumpAmoutnmax;
+    [SerializeField] private MMSpringRotation mMSpringRotation;
+    [SerializeField] Vector2 minMaxSpringRotationForce;
+
 
     #region Unity Lifecycle Methods
 
@@ -136,6 +143,15 @@ public class PlayerController : MonoBehaviour
             // Прямо встановлюємо вертикальну швидкість, як у твоєму старому скрипті.
             // Це дає миттєвий та різкий "флеп", ігноруючи поточну швидкість.
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpVelocity);
+            Vector3 randBumpAmount = new(
+                Random.Range(bumpAmoutnMin.x, bumpAmoutnmax.x),
+                Random.Range(bumpAmoutnMin.y, bumpAmoutnmax.y),
+                Random.Range(bumpAmoutnMin.z, bumpAmoutnmax.z)
+            );
+            mMSpringScale.Bump(randBumpAmount);
+            int randNegativeOrPositive = Random.Range(0, 2) * 2 - 1;
+            mMSpringRotation.Bump(new Vector3(0f, 0f, Random.Range(minMaxSpringRotationForce.x, minMaxSpringRotationForce.y)  * randNegativeOrPositive));
+            
             jumpPressed = false;
         }
 
