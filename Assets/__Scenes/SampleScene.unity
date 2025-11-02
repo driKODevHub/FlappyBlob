@@ -1422,6 +1422,8 @@ MonoBehaviour:
   minMaxSquashForce: {x: 20, y: 30}
   mMSpringRotation: {fileID: 842766056}
   minMaxSpringRotationForce: {x: 1000, y: 1500}
+  wallHitParticlePrefab: {fileID: 8333873712351279718, guid: 32fbb85e9002d274ebf66e56c1f74e1c, type: 3}
+  splatPrefab: {fileID: 4352527130669492353, guid: e5324b9c8c3ef284aa0a8df0b5f53a71, type: 3}
   collisionPivot: {fileID: 1791125994}
   impactSquashAmount: 0.6
   impactStretchAmount: 1.6
@@ -2898,7 +2900,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rb: {fileID: 1691579371}
-  moveSpeed: 7
+  moveSpeed: 9
   jumpVelocity: 22
   jumpCutMultiplier: 0.65
   useAirInertIA: 1
@@ -2999,7 +3001,6 @@ MonoBehaviour:
   wallLayer:
     serializedVersion: 2
     m_Bits: 128
-  splatPrefab: {fileID: 4352527130669492353, guid: e5324b9c8c3ef284aa0a8df0b5f53a71, type: 3}
   wallSplatCooldown: 0.2
 --- !u!1 &1791125993
 GameObject:

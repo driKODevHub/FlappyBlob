@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 8575498391606584342}
   - component: {fileID: 2759243233900390648}
   m_Layer: 0
-  m_Name: HitEffect
+  m_Name: DropHit_Effect
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

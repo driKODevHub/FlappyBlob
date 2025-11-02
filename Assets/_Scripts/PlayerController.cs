@@ -1,10 +1,10 @@
 using MoreMountains.Feedbacks;
 using UnityEngine;
-using System.Collections; // Додано для корутин
+using System.Collections;
 
 /// <summary>
 /// Керує рухом та основними діями гравця.
-/// (ОНОВЛЕНО): Тепер блокує керування рухом на короткий час після відскоку.
+/// (ОНОВЛЕНО): Блокує рух, коли гравець "на землі", але дозволяє безкінечні стрибки.
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerController : MonoBehaviour
@@ -30,11 +30,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float defaultGravityScale = 3f;
 
     [Header("Налаштування Відскоку (Баунсу)")]
-    [Tooltip("Сила відскоку від стін. 1 = ідеальне відбиття, 0.6 = 60% енергії повертається.")]
     [Range(0f, 1.5f)]
     [SerializeField] private float bounciness = 0.6f;
-
-    // (НОВЕ):
     [Tooltip("Час (в секундах), на який блокується керування РУХОМ (вліво/вправо) після удару об стіну.")]
     [SerializeField] private float knockbackLockoutDuration = 0.2f;
 
@@ -44,9 +41,10 @@ public class PlayerController : MonoBehaviour
     private bool jumpReleased;
     private bool isGameActive = false;
     private Vector2 lastFixedUpdateVelocity;
-
-    // (НОВЕ): Таймер, що відраховує час блокування
     private float knockbackLockoutTimer;
+
+    // Стан, що показує, чи торкаємось ми землі/стіни
+    private bool isGrounded = true;
 
     #region Unity Lifecycle Methods
 
@@ -66,14 +64,11 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        // (НОВЕ): Оновлюємо таймер блокування
         if (knockbackLockoutTimer > 0)
         {
             knockbackLockoutTimer -= Time.fixedDeltaTime;
         }
 
-        // (ВИПРАВЛЕНО): Використовуємо linearVelocity
-        // Зберігаємо швидкість ДО того, як ми її змінимо в цьому кадрі
         lastFixedUpdateVelocity = rb.linearVelocity;
 
         HandleMovement();
@@ -94,26 +89,28 @@ public class PlayerController : MonoBehaviour
         horizontalInput = 0f;
         jumpPressed = false;
         jumpReleased = false;
-        knockbackLockoutTimer = 0f; // (НОВЕ): Скидаємо таймер
+        knockbackLockoutTimer = 0f;
+        isGrounded = true;
         this.enabled = true;
+    }
+
+    public void ApplyWallBounce(Vector2 contactNormal)
+    {
+        Vector2 reflectedVelocity = Vector2.Reflect(lastFixedUpdateVelocity, contactNormal);
+        rb.linearVelocity = reflectedVelocity * bounciness;
+        knockbackLockoutTimer = knockbackLockoutDuration;
+
+        // Відскок означає, що ми в повітрі
+        isGrounded = false;
     }
 
     /// <summary>
     /// **ПУБЛІЧНИЙ МЕТОД**
-    /// Застосовує фізичний відскок до Rigidbody.
-    /// (ОНОВЛЕНО): Також активує таймер блокування руху.
+    /// Встановлює стан "на землі". Викликається з PlayerCollisionHandler.
     /// </summary>
-    public void ApplyWallBounce(Vector2 contactNormal)
+    public void SetGroundedState(bool grounded)
     {
-        // Використовуємо Vector2.Reflect, щоб розрахувати новий напрямок
-        Vector2 reflectedVelocity = Vector2.Reflect(lastFixedUpdateVelocity, contactNormal);
-
-        // (ВИПРАВЛЕНО): Використовуємо linearVelocity
-        // Застосовуємо нову швидкість з урахуванням "пружності"
-        rb.linearVelocity = reflectedVelocity * bounciness;
-
-        // (НОВЕ): Встановлюємо таймер блокування
-        knockbackLockoutTimer = knockbackLockoutDuration;
+        isGrounded = grounded;
     }
 
     #endregion
@@ -122,8 +119,6 @@ public class PlayerController : MonoBehaviour
 
     private void HandleInput()
     {
-        // (ОНОВЛЕНО): Зчитуємо ввід, навіть якщо рух заблоковано,
-        // щоб не "втратити" натискання стрибка.
         horizontalInput = Input.GetAxisRaw("Horizontal");
         if (Input.GetKeyDown(KeyCode.Space)) jumpPressed = true;
         if (Input.GetKeyUp(KeyCode.Space)) jumpReleased = true;
@@ -131,8 +126,15 @@ public class PlayerController : MonoBehaviour
 
     private void HandleMovement()
     {
-        // (НОВЕ): Якщо ми в стані "кнокбеку", ігноруємо ввід
-        // і не застосовуємо опір повітря (airDrag).
+        // (ОНОВЛЕНО): Якщо ми на землі, рух заборонено
+        if (isGrounded)
+        {
+            // Зупиняємо будь-який горизонтальний рух, що виник від ковзання
+            rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
+            return;
+        }
+
+        // (СТАРЕ): Блокування кнокбеку має вищий пріоритет
         if (knockbackLockoutTimer > 0)
         {
             return;
@@ -140,31 +142,30 @@ public class PlayerController : MonoBehaviour
 
         if (!isGameActive) return;
 
-        // (Ці рядки вже використовували linearVelocity і були коректні)
         if (Mathf.Abs(horizontalInput) > 0.01f)
         {
-            // (ВИПРАВЛЕНО)
             rb.linearVelocity = new Vector2(horizontalInput * moveSpeed, rb.linearVelocity.y);
         }
         else if (useAirInertIA)
         {
             float slowedVelocityX = rb.linearVelocity.x * airDrag;
-            // (ВИПРАВЛЕНО)
             rb.linearVelocity = new Vector2(slowedVelocityX, rb.linearVelocity.y);
         }
         else
         {
-            // (ВИПРАВЛЕНО)
             rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
         }
     }
 
     private void HandleJump()
     {
-        // Логіка стрибка залишається незалежною від блокування руху
-
         if (jumpPressed)
         {
+            // (ВИДАЛЕНО): Перевірку на 'groundJumpOnly' видалено. Стрибати можна завжди.
+
+            // Ми стрибнули, отже ми в повітрі
+            isGrounded = false;
+
             if (!isGameActive)
             {
                 isGameActive = true;
