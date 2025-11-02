@@ -1,108 +1,104 @@
 using UnityEngine;
 
 /// <summary>
-/// Обробляє фізичні зіткнення гравця.
-/// Викликає смерть при зіткненні з перешкодами (Obstacle)
-/// та створює клякси при зіткненні зі стінами (Wall).
-/// Має кулдаун на спавн клякс від стін, щоб уникнути спаму.
+/// Обробляє всі фізичні зіткнення гравця.
+/// Викликає смерть при зіткненні з перешкодами (ObstacleLayer).
+/// Спавнить клякси при терті об стіни (WallLayer).
 /// </summary>
-[RequireComponent(typeof(Collider2D), typeof(PlayerHealth))]
+[RequireComponent(typeof(PlayerHealth), typeof(PlayerController), typeof(Rigidbody2D))]
 public class PlayerCollisionHandler : MonoBehaviour
 {
-    [Header("Налаштування шарів")]
-    [Tooltip("Шар, який вважається смертельною перешкодою.")]
+    [Header("Компоненти")]
+    [Tooltip("Посилання на скрипт здоров'я гравця.")]
+    [SerializeField] private PlayerHealth playerHealth;
+    [Tooltip("Посилання на скрипт контролера гравця.")]
+    [SerializeField] private PlayerController playerController;
+
+    [Header("Налаштування Шару")]
+    [Tooltip("Шар (або шари), на якому знаходяться смертельні перешкоди.")]
     [SerializeField] private LayerMask obstacleLayer;
-    [Tooltip("Шар, який вважається звичайною стіною (для клякс).")]
+    [Tooltip("Шар (або шари), на якому знаходяться звичайні стіни.")]
     [SerializeField] private LayerMask wallLayer;
 
-    [Header("Посилання на ефекти")]
-    [Tooltip("Префаб клякси, що спавниться при ударі об стіну. (Той самий, що і в ParticleCollisionHandler)")]
+    [Header("Налаштування клякс (Стіни)")]
+    [Tooltip("Префаб клякси, що спавниться при ударі об стіну.")]
     [SerializeField] private GameObject splatPrefab;
-
-    [Tooltip("Кулдаун в секундах між спавном клякс від удару об стіну.")]
+    [Tooltip("Як часто (в секундах) можна спавнити кляксу при терті об стіну.")]
     [SerializeField] private float wallSplatCooldown = 0.2f;
 
-    // --- Кешовані компоненти ---
-    private PlayerHealth playerHealth;
-
-    // --- Змінні для кулдауну ---
-    // Зберігає час (в секундах), коли була створена остання клякса від стіни.
-    // Ініціалізуємо від'ємним значенням, щоб перша клякса спрацювала миттєво.
-    private float lastWallSplatTime = -10f;
+    // --- Внутрішні змінні ---
+    private float lastWallSplatTime;
 
     private void Awake()
     {
-        // Отримуємо посилання на PlayerHealth, що висить на цьому ж об'єкті
-        playerHealth = GetComponent<PlayerHealth>();
+        // Кешуємо компоненти
+        if (playerHealth == null) playerHealth = GetComponent<PlayerHealth>();
+        if (playerController == null) playerController = GetComponent<PlayerController>();
+
+        // Ініціалізуємо таймер так, щоб клякса могла з'явитись одразу
+        lastWallSplatTime = -wallSplatCooldown;
     }
 
     /// <summary>
-    /// Викликається автоматично Unity при зіткненні з іншим Collider2D.
+    /// Цей метод спрацьовує ОДИН РАЗ при вході в колізію.
+    /// Використовуємо лише для миттєвих подій, як-от СМЕРТЬ.
     /// </summary>
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        // Отримуємо шар об'єкта, з яким зіткнулись
-        int otherLayer = collision.gameObject.layer;
+        // Якщо контролер вимкнено, значить ми мертві. Ігноруємо колізії.
+        if (!playerController.enabled) return;
 
-        // --- 1. Перевірка на ПЕРЕШКОДУ (Obstacle) ---
-        // Використовуємо бітову маску, щоб перевірити, чи належить 'otherLayer' до 'obstacleLayer'
-        if (obstacleLayer == (obstacleLayer | (1 << otherLayer)))
+        int layer = collision.gameObject.layer;
+
+        // Перевіряємо, чи входить шар об'єкта в нашу LayerMask для перешкод
+        // (1 << layer) - це бітова маска для поточного шару
+        if (((1 << layer) & obstacleLayer) != 0)
         {
-            // Це перешкода. Викликаємо смерть.
-            // PlayerHealth сам подбає про вимкнення гравця та спавн частинок смерті.
             playerHealth.Die();
-        }
-        // --- 2. Перевірка на СТІНУ (Wall) ---
-        else if (wallLayer == (wallLayer | (1 << otherLayer)))
-        {
-            // --- ПЕРЕВІРКА КУЛДАУНУ ---
-            // Перевіряємо, чи пройшло достатньо часу з останнього спавну клякси
-            if (Time.time < lastWallSplatTime + wallSplatCooldown)
-            {
-                // Кулдаун ще не пройшов, нічого не робимо
-                return;
-            }
-
-            // --- РЕЄСТРАЦІЯ КУЛДАУНУ ---
-            // Якщо ми тут, значить спавн дозволено. Оновлюємо час.
-            lastWallSplatTime = Time.time;
-
-            // --- Спавн клякси (ТІЛЬКИ ОДНІЄЇ) ---
-            // Щоб уникнути спавну десятків клякс при ударі об кут (де багато contact points),
-            // ми беремо лише першу точку контакту.
-            if (collision.contactCount > 0)
-            {
-                ContactPoint2D contact = collision.contacts[0];
-                SpawnSplatAt(contact.point);
-            }
         }
     }
 
     /// <summary>
-    /// Створює екземпляр клякси в зазначеній позиції
-    /// та реєструє її в SplatManager.
+    /// Цей метод спрацьовує КОЖЕН ФІЗИЧНИЙ КАДР, поки триває колізія.
+    /// Використовуємо для постійних ефектів, як-от ТЕРТЯ ОБ СТІНУ.
     /// </summary>
-    /// <param name="position">Світова 2D-координата для спавну.</param>
-    private void SpawnSplatAt(Vector2 position)
+    private void OnCollisionStay2D(Collision2D collision)
     {
-        if (splatPrefab == null)
-        {
-            Debug.LogError("Splat Prefab не призначено в PlayerCollisionHandler!", this);
-            return;
-        }
+        // Якщо контролер вимкнено (ми мертві), не спавнити клякси
+        if (!playerController.enabled) return;
 
-        // Створюємо кляксу. 
-        // Її скрипт SplatAppearance сам подбає про вибір спрайту та поворот.
-        GameObject splatInstance = Instantiate(splatPrefab, position, Quaternion.identity);
+        int layer = collision.gameObject.layer;
 
-        // Повідомляємо менеджер про нову кляксу для оптимізації
-        if (SplatManager.Instance != null)
+        // Перевіряємо, чи входить шар об'єкта в нашу LayerMask для стін
+        if (((1 << layer) & wallLayer) != 0)
         {
-            SplatManager.Instance.AddSplat(splatInstance);
-        }
-        else
-        {
-            Debug.LogError("SplatManager не знайдено на сцені! Клякса не буде відстежуватись.", this);
+            // --- Логіка кулдауну ---
+            // Перевіряємо, чи пройшло достатньо часу з останнього спавну
+            if (Time.time < lastWallSplatTime + wallSplatCooldown)
+            {
+                return; // Ще не час, виходимо
+            }
+            lastWallSplatTime = Time.time; // Скидаємо таймер
+
+            // --- Логіка спавну клякси ---
+            if (splatPrefab != null && collision.contacts.Length > 0)
+            {
+                // Беремо першу точку контакту
+                ContactPoint2D contact = collision.contacts[0];
+
+                // Створюємо кляксу в точці контакту
+                GameObject splatInstance = Instantiate(splatPrefab, contact.point, Quaternion.identity);
+
+                // Повідомляємо менеджер про нову кляксу
+                if (SplatManager.Instance != null)
+                {
+                    SplatManager.Instance.AddSplat(splatInstance);
+                }
+                else
+                {
+                    Debug.LogWarning("SplatManager не знайдено, клякса не була зареєстрована.");
+                }
+            }
         }
     }
 }

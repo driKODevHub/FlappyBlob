@@ -106,11 +106,12 @@ MonoBehaviour:
   possibleSprites:
   - {fileID: 21300000, guid: d33188f45e31ede43bb58830ae421c7a, type: 3}
   - {fileID: 21300000, guid: ae4dc46ba88d99c4f8efa43be3e49d3f, type: 3}
-  useRandomRotation: 1
+  randomizeRotation: 1
   minRotation: 0
   maxRotation: 360
   useRandomScale: 1
   minScale: 0.7
   maxScale: 1.2
   useAppearEffect: 1
-  appearDuration: 0.2
+  appearDuration: 0.12
+  finalMaterial: {fileID: 2100000, guid: c0c6c5faf8c4aad4cb74b25a3abec9c1, type: 2}

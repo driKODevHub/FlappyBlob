@@ -4,7 +4,7 @@ using UnityEngine;
 /// Керує здоров'ям, смертю та створенням ефектів смерті для гравця.
 /// Вимагає наявності PlayerController та Collider2D на об'єкті.
 /// </summary>
-[RequireComponent(typeof(PlayerController), typeof(Collider2D))]
+[RequireComponent(typeof(PlayerController), typeof(Collider2D), typeof(Rigidbody2D))]
 public class PlayerHealth : MonoBehaviour
 {
     [Header("Посилання")]
@@ -16,6 +16,7 @@ public class PlayerHealth : MonoBehaviour
     // --- Посилання на компоненти ---
     private PlayerController playerController;
     private Collider2D playerCollider;
+    private Rigidbody2D rb;
     private bool isDead = false;
 
     private void Awake()
@@ -23,20 +24,12 @@ public class PlayerHealth : MonoBehaviour
         // Кешуємо компоненти для продуктивності
         playerController = GetComponent<PlayerController>();
         playerCollider = GetComponent<Collider2D>();
+        rb = GetComponent<Rigidbody2D>();
 
         // Перевірка на випадок, якщо рендерери не призначені в інспекторі
         if (playerRenderers == null || playerRenderers.Length == 0)
         {
             Debug.LogWarning("У PlayerHealth не призначено жодного рендерера гравця.", this);
-        }
-    }
-
-    void Update()
-    {
-        // Тестова кнопка для спавну частинок без смерті гравця.
-        if (Input.GetKeyDown(KeyCode.K))
-        {
-            SpawnDeathParticles();
         }
     }
 
@@ -61,11 +54,48 @@ public class PlayerHealth : MonoBehaviour
         if (playerController != null) playerController.enabled = false;
         if (playerCollider != null) playerCollider.enabled = false;
 
-        // 3. Спавнимо частинки
+        // 3. Зупиняємо будь-який рух (ВИПРАВЛЕНО)
+        rb.bodyType = RigidbodyType2D.Kinematic; // Робимо тіло кінематичним, щоб воно "зависло"
+        rb.linearVelocity = Vector2.zero; // Використовуємо .linearVelocity
+
+        // 4. Спавнимо частинки
         SpawnDeathParticles();
 
-        // TODO: В майбутньому тут можна додати логіку для респавну або перезапуску рівня
-        // Invoke(nameof(Respawn), 2f);
+        // 5. Повідомляємо GameManager, щоб він почав респавн
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.StartRespawnProcess();
+        }
+        else
+        {
+            Debug.LogError("GameManager не знайдено на сцені! Гравець не респавниться.", this);
+        }
+    }
+
+    /// <summary>
+    /// **ПУБЛІЧНИЙ МЕТОД**
+    /// Скидає здоров'я та візуал гравця. Викликається з GameManager.
+    /// </summary>
+    /// <param name="spawnPosition">Позиція, куди треба перемістити гравця.</param>
+    public void ResetPlayer(Vector3 spawnPosition)
+    {
+        // 1. Переміщуємо гравця на точку спавну
+        transform.position = spawnPosition;
+
+        // 2. Вмикаємо візуал
+        foreach (var renderer in playerRenderers)
+        {
+            if (renderer != null)
+            {
+                renderer.enabled = true;
+            }
+        }
+
+        // 3. Вмикаємо колайдер
+        if (playerCollider != null) playerCollider.enabled = true;
+
+        // 4. Скидаємо прапорець смерті
+        isDead = false;
     }
 
     /// <summary>

@@ -60,8 +60,8 @@ public class PlayerController : MonoBehaviour
         {
             rb = GetComponent<Rigidbody2D>();
         }
-        rb.gravityScale = 0f;
-        rb.bodyType = RigidbodyType2D.Kinematic;
+        // Скидаємо стан гравця при старті
+        ResetPlayer();
     }
 
     /// <summary>
@@ -79,6 +79,32 @@ public class PlayerController : MonoBehaviour
     {
         HandleMovement();
         HandleJump();
+    }
+
+    #endregion
+
+    #region Public Methods
+
+    /// <summary>
+    /// **ПУБЛІЧНИЙ МЕТОД**
+    /// Скидає стан контролера до початкового. Викликається з GameManager.
+    /// </summary>
+    public void ResetPlayer()
+    {
+        isGameActive = false;
+
+        // Повертаємо гравця в "кінематичний" стан, де він не рухається і не має гравітації
+        rb.bodyType = RigidbodyType2D.Kinematic;
+        rb.gravityScale = 0f;
+        rb.linearVelocity = Vector2.zero; // (ВИПРАВЛЕНО)
+
+        // Скидаємо кешований ввід
+        horizontalInput = 0f;
+        jumpPressed = false;
+        jumpReleased = false;
+
+        // Вмикаємо сам скрипт (на випадок, якщо він був вимкнений)
+        this.enabled = true;
     }
 
     #endregion
@@ -104,7 +130,7 @@ public class PlayerController : MonoBehaviour
     }
 
     /// <summary>
-    /// Застосовує горизонтальний рух до Rigidbody.
+    /// Застосовує горизонтальний рух до Rigidbody. (ВИПРАВЛЕНО)
     /// </summary>
     private void HandleMovement()
     {
@@ -112,6 +138,7 @@ public class PlayerController : MonoBehaviour
 
         if (Mathf.Abs(horizontalInput) > 0.01f)
         {
+            // Використовуємо .linearVelocity
             rb.linearVelocity = new Vector2(horizontalInput * moveSpeed, rb.linearVelocity.y);
         }
         else if (useAirInertia)
@@ -126,7 +153,7 @@ public class PlayerController : MonoBehaviour
     }
 
     /// <summary>
-    /// Керує логікою стрибка: пряме встановлення швидкості та "зрізання" при відпусканні.
+    /// Керує логікою стрибка: пряме встановлення швидкості та "зрізання" при відпусканні. (ВИПРАВЛЕНО)
     /// </summary>
     private void HandleJump()
     {
@@ -136,22 +163,27 @@ public class PlayerController : MonoBehaviour
             if (!isGameActive)
             {
                 isGameActive = true;
-                rb.bodyType = RigidbodyType2D.Dynamic;
+                rb.bodyType = RigidbodyType2D.Dynamic; // Вмикаємо повну фізику
                 rb.gravityScale = defaultGravityScale;
             }
 
-            // Прямо встановлюємо вертикальну швидкість, як у твоєму старому скрипті.
-            // Це дає миттєвий та різкий "флеп", ігноруючи поточну швидкість.
+            // Прямо встановлюємо вертикальну швидкість
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpVelocity);
-            Vector3 randBumpAmount = new(
-                Random.Range(bumpAmoutnMin.x, bumpAmoutnmax.x),
-                Random.Range(bumpAmoutnMin.y, bumpAmoutnmax.y),
-                Random.Range(bumpAmoutnMin.z, bumpAmoutnmax.z)
-            );
-            mMSpringScale.Bump(randBumpAmount);
-            int randNegativeOrPositive = Random.Range(0, 2) * 2 - 1;
-            mMSpringRotation.Bump(new Vector3(0f, 0f, Random.Range(minMaxSpringRotationForce.x, minMaxSpringRotationForce.y)  * randNegativeOrPositive));
-            
+
+            // --- MMFeedbacks ---
+            if (mMSpringScale != null && mMSpringRotation != null)
+            {
+                Vector3 randBumpAmount = new(
+                    Random.Range(bumpAmoutnMin.x, bumpAmoutnmax.x),
+                    Random.Range(bumpAmoutnMin.y, bumpAmoutnmax.y),
+                    Random.Range(bumpAmoutnMin.z, bumpAmoutnmax.z)
+                );
+                mMSpringScale.Bump(randBumpAmount);
+                int randNegativeOrPositive = Random.Range(0, 2) * 2 - 1;
+                mMSpringRotation.Bump(new Vector3(0f, 0f, Random.Range(minMaxSpringRotationForce.x, minMaxSpringRotationForce.y) * randNegativeOrPositive));
+            }
+            // --- ---
+
             jumpPressed = false;
         }
 
