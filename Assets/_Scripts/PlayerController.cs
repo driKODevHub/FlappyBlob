@@ -42,11 +42,16 @@ public class PlayerController : MonoBehaviour
     private bool jumpReleased; // Зберігає інформацію про відпускання кнопки стрибка
     private bool isGameActive = false; // Чи почалась активна фаза гри (після першого стрибка)
 
-    [Header("Jump MMFeedback info")]
-    [SerializeField] private MMSpringScale mMSpringScale;
-    [SerializeField] private Vector3 bumpAmoutnMin, bumpAmoutnmax;
+    [Header("Jump MMFeedbacks info")]
+    [Tooltip("Компонент Squash & Stretch для анімації стрибка.")]
+    [SerializeField] private MMSpringSquashAndStretch mMSpringSquashAndStretch;
+    [Tooltip("Мінімальна та максимальна сила 'поштовху' пружини для Squash & Stretch.")]
+    [SerializeField] private Vector2 minMaxSquashForce = new Vector2(5f, 10f); // ОНОВЛЕНО
+
+    [Tooltip("Компонент Spring Rotation для анімації стрибка.")]
     [SerializeField] private MMSpringRotation mMSpringRotation;
-    [SerializeField] Vector2 minMaxSpringRotationForce;
+    [Tooltip("Мінімальна та максимальна сила 'поштовху' пружини для Обертання.")]
+    [SerializeField] Vector2 minMaxSpringRotationForce = new Vector2(10f, 15f); // ОНОВЛЕНО (додав тултіп і дефолт)
 
 
     #region Unity Lifecycle Methods
@@ -96,7 +101,7 @@ public class PlayerController : MonoBehaviour
         // Повертаємо гравця в "кінематичний" стан, де він не рухається і не має гравітації
         rb.bodyType = RigidbodyType2D.Kinematic;
         rb.gravityScale = 0f;
-        rb.linearVelocity = Vector2.zero; // (ВИПРАВЛЕНО)
+        rb.linearVelocity = Vector2.zero;
 
         // Скидаємо кешований ввід
         horizontalInput = 0f;
@@ -120,6 +125,8 @@ public class PlayerController : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
+            // TODO: Для кращого ефекту, ти можеш викликати .Squash() тут
+            // if (mMSpringSquashAndStretch != null) mMSpringSquashAndStretch.Squash(someSquashVector);
             jumpPressed = true;
         }
 
@@ -130,7 +137,7 @@ public class PlayerController : MonoBehaviour
     }
 
     /// <summary>
-    /// Застосовує горизонтальний рух до Rigidbody. (ВИПРАВЛЕНО)
+    /// Застосовує горизонтальний рух до Rigidbody.
     /// </summary>
     private void HandleMovement()
     {
@@ -138,7 +145,6 @@ public class PlayerController : MonoBehaviour
 
         if (Mathf.Abs(horizontalInput) > 0.01f)
         {
-            // Використовуємо .linearVelocity
             rb.linearVelocity = new Vector2(horizontalInput * moveSpeed, rb.linearVelocity.y);
         }
         else if (useAirInertia)
@@ -153,7 +159,7 @@ public class PlayerController : MonoBehaviour
     }
 
     /// <summary>
-    /// Керує логікою стрибка: пряме встановлення швидкості та "зрізання" при відпусканні. (ВИПРАВЛЕНО)
+    /// Керує логікою стрибка: пряме встановлення швидкості та "зрізання" при відпусканні.
     /// </summary>
     private void HandleJump()
     {
@@ -170,17 +176,25 @@ public class PlayerController : MonoBehaviour
             // Прямо встановлюємо вертикальну швидкість
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpVelocity);
 
-            // --- MMFeedbacks ---
-            if (mMSpringScale != null && mMSpringRotation != null)
+            // --- MMFeedbacks --- (ОНОВЛЕНА ЛОГІКА)
+
+            // 1. Ефект Squash & Stretch
+            if (mMSpringSquashAndStretch != null)
             {
-                Vector3 randBumpAmount = new(
-                    Random.Range(bumpAmoutnMin.x, bumpAmoutnmax.x),
-                    Random.Range(bumpAmoutnMin.y, bumpAmoutnmax.y),
-                    Random.Range(bumpAmoutnMin.z, bumpAmoutnmax.z)
-                );
-                mMSpringScale.Bump(randBumpAmount);
-                int randNegativeOrPositive = Random.Range(0, 2) * 2 - 1;
-                mMSpringRotation.Bump(new Vector3(0f, 0f, Random.Range(minMaxSpringRotationForce.x, minMaxSpringRotationForce.y) * randNegativeOrPositive));
+                // Генеруємо випадкову СИЛУ (float)
+                float randomSquashForce = Random.Range(minMaxSquashForce.x, minMaxSquashForce.y);
+                // Викликаємо .Bump() з одним float значенням
+                mMSpringSquashAndStretch.Bump(randomSquashForce);
+            }
+
+            // 2. Ефект Обертання
+            if (mMSpringRotation != null)
+            {
+                int randNegativeOrPositive = Random.Range(0, 2) * 2 - 1; // -1 або 1
+                float randomRotationForce = Random.Range(minMaxSpringRotationForce.x, minMaxSpringRotationForce.y);
+
+                // Викликаємо .Bump() з Vector3 (тільки по осі Z)
+                mMSpringRotation.Bump(new Vector3(0f, 0f, randomRotationForce * randNegativeOrPositive));
             }
             // --- ---
 
