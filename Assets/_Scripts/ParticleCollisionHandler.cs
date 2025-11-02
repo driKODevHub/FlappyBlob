@@ -28,7 +28,14 @@ public class ParticleCollisionHandler : MonoBehaviour
             {
                 // Створюємо ефект і розвертаємо його "від стіни"
                 Quaternion rotation = Quaternion.LookRotation(collisionEvents[i].normal);
-                Instantiate(hitEffectPrefab, collisionEvents[i].intersection, rotation);
+                GameObject hitEffectInstance = Instantiate(hitEffectPrefab, collisionEvents[i].intersection, rotation); // (ЗМІНЕНО)
+
+                // (НОВЕ): Встановлюємо колір партиклів з PaletteManager
+                if (PaletteManager.Instance != null && PaletteManager.Instance.CurrentPalette != null)
+                {
+                    var mainModule = hitEffectInstance.GetComponent<ParticleSystem>().main;
+                    mainModule.startColor = PaletteManager.Instance.CurrentPalette.PaintAndPlayerColor;
+                }
             }
 
             // --- Спавн клякси ---
@@ -51,3 +58,4 @@ public class ParticleCollisionHandler : MonoBehaviour
         }
     }
 }
+

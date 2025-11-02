@@ -102,7 +102,14 @@ public class PlayerVisualController : MonoBehaviour
             float angle = Vector2.SignedAngle(Vector2.up, contactNormal);
             Quaternion rotation2D = Quaternion.Euler(0, 0, angle);
 
-            Instantiate(wallHitParticlePrefab, (Vector3)contactPoint, rotation2D);
+            GameObject particleInstance = Instantiate(wallHitParticlePrefab, (Vector3)contactPoint, rotation2D); // (ЗМІНЕНО)
+
+            // (НОВЕ): Встановлюємо колір партиклів з PaletteManager
+            if (PaletteManager.Instance != null && PaletteManager.Instance.CurrentPalette != null)
+            {
+                var mainModule = particleInstance.GetComponent<ParticleSystem>().main;
+                mainModule.startColor = PaletteManager.Instance.CurrentPalette.PaintAndPlayerColor;
+            }
         }
 
         // 2. Спавн клякси (ТУТ БЕЗ ЗМІН)

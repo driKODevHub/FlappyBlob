@@ -41,5 +41,17 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: Wall
+    uniqueID: 760567679
+    locked: 0
+  - name: Paint
+    uniqueID: 2696331851
+    locked: 0
+  - name: Player
+    uniqueID: 598615703
+    locked: 0
+  - name: Obstacles
+    uniqueID: 2056212877
+    locked: 0
   m_RenderingLayers:
   - Default

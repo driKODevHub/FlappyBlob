@@ -47,7 +47,7 @@ Material:
     m_Ints: []
     m_Floats:
     - Vector1_6aa33d5edb0947a491714f02ad91c59e: 5
-    - _Fade: 1
+    - _Fade: 0
     - _NoiseScale: 15
     m_Colors: []
   m_BuildTextureStacks: []

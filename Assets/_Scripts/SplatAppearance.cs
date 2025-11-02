@@ -93,11 +93,26 @@ public class SplatAppearance : MonoBehaviour
 
     private void Start()
     {
+        // --- (НОВИЙ РЯДОК) Реєструємо цю кляксу в менеджері ---
+        if (PaletteManager.Instance != null)
+        {
+            PaletteManager.Instance.RegisterRenderer(spriteRenderer);
+        }
+
         // --- 5. Запуск корутини появи ---
         // (ОНОВЛЕНО): Перевіряємо originalFadeMaterialAsset
         if (useAppearEffect && materialInstance != null && originalFadeMaterialAsset != null)
         {
             StartCoroutine(AppearCoroutine());
+        }
+    }
+
+    private void OnDestroy()
+    {
+        // Коли кляксу знищують, кажемо менеджеру викреслити її зі списку
+        if (PaletteManager.Instance != null)
+        {
+            PaletteManager.Instance.UnregisterRenderer(spriteRenderer);
         }
     }
 
@@ -131,7 +146,6 @@ public class SplatAppearance : MonoBehaviour
         // оскільки ми зберегли 'originalFadeMaterialAsset'
     }
 
-    // --- (НОВИЙ МЕТОД) ---
     /// <summary>
     /// **ПУБЛІЧНИЙ МЕТОД**
     /// Запускає корутину зникнення (fade-out) і подальшого знищення об'єкта.
@@ -153,7 +167,6 @@ public class SplatAppearance : MonoBehaviour
         }
     }
 
-    // --- (НОВА КОРУТИНА) ---
     /// <summary>
     /// Корутина, що плавно змінює значення "_Fade" від 1 до 0 для зникнення.
     /// </summary>
@@ -186,3 +199,4 @@ public class SplatAppearance : MonoBehaviour
         Destroy(gameObject);
     }
 }
+
