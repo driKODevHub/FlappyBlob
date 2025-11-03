@@ -621,6 +621,58 @@ PrefabInstance:
       propertyPath: Target
       value: 
       objectReference: {fileID: 797017984}
+    - target: {fileID: 8949148688949891349, guid: f6a69bdf16f5e2040855a82d6fab40eb, type: 3}
+      propertyPath: mouthPositionBounds.x
+      value: -0.06
+      objectReference: {fileID: 0}
+    - target: {fileID: 8949148688949891349, guid: f6a69bdf16f5e2040855a82d6fab40eb, type: 3}
+      propertyPath: mouthPositionBounds.y
+      value: -0.42
+      objectReference: {fileID: 0}
+    - target: {fileID: 8949148688949891349, guid: f6a69bdf16f5e2040855a82d6fab40eb, type: 3}
+      propertyPath: maxEyeAsymmetryPercent
+      value: 0.05
+      objectReference: {fileID: 0}
+    - target: {fileID: 8949148688949891349, guid: f6a69bdf16f5e2040855a82d6fab40eb, type: 3}
+      propertyPath: leftEyePositionBounds.x
+      value: -0.58
+      objectReference: {fileID: 0}
+    - target: {fileID: 8949148688949891349, guid: f6a69bdf16f5e2040855a82d6fab40eb, type: 3}
+      propertyPath: leftEyePositionBounds.y
+      value: -0.16
+      objectReference: {fileID: 0}
+    - target: {fileID: 8949148688949891349, guid: f6a69bdf16f5e2040855a82d6fab40eb, type: 3}
+      propertyPath: rightEyePositionBounds.x
+      value: 0.58
+      objectReference: {fileID: 0}
+    - target: {fileID: 8949148688949891349, guid: f6a69bdf16f5e2040855a82d6fab40eb, type: 3}
+      propertyPath: rightEyePositionBounds.y
+      value: -0.17
+      objectReference: {fileID: 0}
+    - target: {fileID: 8949148688949891349, guid: f6a69bdf16f5e2040855a82d6fab40eb, type: 3}
+      propertyPath: mouthPositionBounds.width
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8949148688949891349, guid: f6a69bdf16f5e2040855a82d6fab40eb, type: 3}
+      propertyPath: mouthPositionBounds.height
+      value: 0.14
+      objectReference: {fileID: 0}
+    - target: {fileID: 8949148688949891349, guid: f6a69bdf16f5e2040855a82d6fab40eb, type: 3}
+      propertyPath: leftEyePositionBounds.width
+      value: 0.16
+      objectReference: {fileID: 0}
+    - target: {fileID: 8949148688949891349, guid: f6a69bdf16f5e2040855a82d6fab40eb, type: 3}
+      propertyPath: leftEyePositionBounds.height
+      value: 0.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8949148688949891349, guid: f6a69bdf16f5e2040855a82d6fab40eb, type: 3}
+      propertyPath: rightEyePositionBounds.width
+      value: 0.16
+      objectReference: {fileID: 0}
+    - target: {fileID: 8949148688949891349, guid: f6a69bdf16f5e2040855a82d6fab40eb, type: 3}
+      propertyPath: rightEyePositionBounds.height
+      value: 0.4
+      objectReference: {fileID: 0}
     - target: {fileID: 9124395394078038403, guid: f6a69bdf16f5e2040855a82d6fab40eb, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0

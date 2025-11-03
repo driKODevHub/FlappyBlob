@@ -2,15 +2,13 @@ using UnityEngine;
 
 /// <summary>
 /// Керує здоров'ям, смертю та створенням ефектів смерті для гравця.
-/// (ОНОВЛЕНО): Більше не керує візуалом, а делегує це PlayerVisualController.
+/// (ОНОВЛЕНО): Тепер також викликає 'PlayerCosmeticRandomizer' при ресеті.
 /// </summary>
 [RequireComponent(typeof(PlayerController), typeof(Collider2D), typeof(Rigidbody2D))]
 public class PlayerHealth : MonoBehaviour
 {
     // --- Singleton ---
     public static PlayerHealth Instance { get; private set; }
-
-    // --- (ВИДАЛЕНО): Посилання на рендерери та партикли ---
 
     // --- Посилання на компоненти ---
     private PlayerController playerController;
@@ -58,9 +56,7 @@ public class PlayerHealth : MonoBehaviour
         rb.bodyType = RigidbodyType2D.Kinematic;
         rb.linearVelocity = Vector2.zero;
 
-        // 4. (ВИДАЛЕНО): SpawnDeathParticles()
-
-        // 5. Повідомляємо GameManager
+        // 4. Повідомляємо GameManager
         if (GameManager.Instance != null)
         {
             GameManager.Instance.StartRespawnProcess();
@@ -86,12 +82,16 @@ public class PlayerHealth : MonoBehaviour
             PlayerVisualController.Instance.ResetVisuals();
         }
 
-        // 3. Вмикаємо колайдер
+        // 3. (НОВЕ!) Запускаємо рандомізацію кастомізації
+        if (PlayerCosmeticRandomizer.Instance != null)
+        {
+            PlayerCosmeticRandomizer.Instance.RandomizeCosmetics();
+        }
+
+        // 4. Вмикаємо колайдер
         if (playerCollider != null) playerCollider.enabled = true;
 
-        // 4. Скидаємо прапорець смерті
+        // 5. Скидаємо прапорець смерті
         isDead = false;
     }
-
-    // --- (ВИДАЛЕНО): Метод SpawnDeathParticles() ---
 }

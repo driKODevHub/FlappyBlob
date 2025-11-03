@@ -1,4 +1,5 @@
 using System;
+using System.Collections; // (ДОДАНО): Потрібно для корутин
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -18,20 +19,19 @@ public class PaletteManager : MonoBehaviour
 
     public ColorPaletteSO CurrentPalette { get; private set; }
 
-    // (ВИДАЛЕНО) Event 'OnPaletteChanged' більше не потрібен
-
     private Camera mainCamera;
 
-    // (ОНОВЛЕНО) Три списки для всіх рендереів
+    // (ОНОВЛЕНО): Перейменовано
     private List<SpriteRenderer> wallRenderers = new List<SpriteRenderer>();
     private List<SpriteRenderer> obstacleRenderers = new List<SpriteRenderer>();
-    private List<SpriteRenderer> paintAndPlayerRenderers = new List<SpriteRenderer>();
+    private List<SpriteRenderer> paintRenderers = new List<SpriteRenderer>();
 
     // Назви шарів (щоб уникнути помилок при наборі тексту)
     private const string WALL_LAYER = "Wall";
     private const string OBSTACLES_LAYER = "Obstacles";
     private const string PAINT_LAYER = "Paint";
-    private const string PLAYER_LAYER = "Player";
+    // (ВИДАЛЕНО): Player layer більше не потрібен
+    // private const string PLAYER_LAYER = "Player";
 
 
     private void Awake()
@@ -48,9 +48,23 @@ public class PaletteManager : MonoBehaviour
         mainCamera = Camera.main;
     }
 
+    // (ОНОВЛЕНО): Використовуємо корутину для вирішення проблем з порядком запуску
     private void Start()
     {
-        // Знаходимо всі статичні об'єкти на сцені
+        // Запускаємо сканування ТІЛЬКИ ЧЕРЕЗ ОДИН КАДР.
+        // Це дає LevelManager час заспавнити початковий рівень у своєму Start().
+        StartCoroutine(DelayedScanAndApplyPalette());
+    }
+
+    /// <summary>
+    /// Чекає один кадр, сканує сцену і застосовує палітру.
+    /// </summary>
+    private IEnumerator DelayedScanAndApplyPalette()
+    {
+        // Чекаємо кінця кадру, де всі Start() вже мали виконатись
+        yield return null;
+
+        // Тепер скануємо сцену, коли рівень вже гарантовано заспавнений
         FindAndCacheAllRenderers();
 
         if (initialPalette != null)
@@ -69,21 +83,21 @@ public class PaletteManager : MonoBehaviour
     /// </summary>
     private void FindAndCacheAllRenderers()
     {
-        SpriteRenderer[] allRenderers = FindObjectsByType<SpriteRenderer>();
+        // (ОНОВЛЕНО): Додаємо очищення списків про всяк випадок,
+        // якщо цей метод колись буде викликано повторно.
+        wallRenderers.Clear();
+        obstacleRenderers.Clear();
+        paintRenderers.Clear();
+
+        SpriteRenderer[] allRenderers = FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None);
 
         foreach (var renderer in allRenderers)
         {
-            // Ми не перевіряємо, чи це клякса, чи ні.
-            // Ми просто сортуємо ВСЕ, що знайшли.
             SortAndCacheRenderer(renderer);
         }
 
-        Debug.Log($"PaletteManager: Знайдено та закешовано: {wallRenderers.Count} стін, {obstacleRenderers.Count} перешкод, {paintAndPlayerRenderers.Count} об'єктів фарби/гравця.");
-    }
-
-    private T[] FindObjectsByType<T>()
-    {
-        throw new NotImplementedException();
+        // (ОНОВЛЕНО): Оновлений Debug.Log
+        Debug.Log($"PaletteManager: Знайдено та закешовано: {wallRenderers.Count} стін, {obstacleRenderers.Count} перешкод, {paintRenderers.Count} об'єктів фарби.");
     }
 
     /// <summary>
@@ -104,21 +118,20 @@ public class PaletteManager : MonoBehaviour
         {
             mainCamera.backgroundColor = CurrentPalette.WallAndBackgroundColor;
         }
-        else if (Camera.main != null) // Додаткова перевірка
+        else if (Camera.main != null)
         {
             mainCamera = Camera.main;
             mainCamera.backgroundColor = CurrentPalette.WallAndBackgroundColor;
         }
 
         // 2. Оновлюємо всі закешовані рендерери
-        // Ми робимо цикл у зворотному порядку, щоб безпечно видаляти 'null' (знищені) об'єкти
         UpdateRendererList(wallRenderers, CurrentPalette.WallAndBackgroundColor);
         UpdateRendererList(obstacleRenderers, CurrentPalette.ObstacleColor);
-        UpdateRendererList(paintAndPlayerRenderers, CurrentPalette.PaintAndPlayerColor);
+        // (ОНОВЛЕНО): Використовуємо новий список
+        UpdateRendererList(paintRenderers, CurrentPalette.PaintAndPlayerColor);
     }
 
     /// <summary>
-    /// (НОВИЙ МЕТОД)
     /// Проходить по списку, застосовує колір, видаляє знищені об'єкти.
     /// </summary>
     private void UpdateRendererList(List<SpriteRenderer> renderers, Color color)
@@ -127,21 +140,22 @@ public class PaletteManager : MonoBehaviour
         {
             if (renderers[i] == null)
             {
-                renderers.RemoveAt(i); // Об'єкт було знищено, видаляємо
+                renderers.RemoveAt(i);
             }
             else
             {
-                renderers[i].color = color; // Застосовуємо колір
+                renderers[i].color = color;
             }
         }
     }
 
     /// <summary>
-    /// (НОВИЙ МЕТОД)
     /// Додає рендерер у потрібний список (використовується для сортування).
     /// </summary>
     private void SortAndCacheRenderer(SpriteRenderer renderer)
     {
+        if (renderer == null) return;
+
         switch (renderer.sortingLayerName)
         {
             case WALL_LAYER:
@@ -150,9 +164,9 @@ public class PaletteManager : MonoBehaviour
             case OBSTACLES_LAYER:
                 obstacleRenderers.Add(renderer);
                 break;
+            // (ОНОВЛЕНО): Об'єднано
             case PAINT_LAYER:
-            case PLAYER_LAYER:
-                paintAndPlayerRenderers.Add(renderer);
+                paintRenderers.Add(renderer);
                 break;
         }
     }
@@ -177,9 +191,9 @@ public class PaletteManager : MonoBehaviour
             case OBSTACLES_LAYER:
                 if (!obstacleRenderers.Contains(renderer)) obstacleRenderers.Add(renderer);
                 break;
+            // (ОНОВЛЕНО): Об'єднано
             case PAINT_LAYER:
-            case PLAYER_LAYER:
-                if (!paintAndPlayerRenderers.Contains(renderer)) paintAndPlayerRenderers.Add(renderer);
+                if (!paintRenderers.Contains(renderer)) paintRenderers.Add(renderer);
                 break;
         }
 
@@ -198,14 +212,13 @@ public class PaletteManager : MonoBehaviour
     {
         if (renderer == null) return;
 
-        // Просто видаляємо з усіх списків (List.Remove безпечно ігнорує, якщо елемента немає)
         wallRenderers.Remove(renderer);
         obstacleRenderers.Remove(renderer);
-        paintAndPlayerRenderers.Remove(renderer);
+        // (ОНОВЛЕНО): Використовуємо новий список
+        paintRenderers.Remove(renderer);
     }
 
     /// <summary>
-    /// (НОВИЙ МЕТОД)
     /// Приватний хелпер для миттєвого фарбування одного рендерера.
     /// </summary>
     private void ApplyColorToRenderer(SpriteRenderer renderer, string layerName)
@@ -218,8 +231,8 @@ public class PaletteManager : MonoBehaviour
             case OBSTACLES_LAYER:
                 renderer.color = CurrentPalette.ObstacleColor;
                 break;
+            // (ОНОВЛЕНО): Об'єднано
             case PAINT_LAYER:
-            case PLAYER_LAYER:
                 renderer.color = CurrentPalette.PaintAndPlayerColor;
                 break;
         }
@@ -228,6 +241,11 @@ public class PaletteManager : MonoBehaviour
     [ContextMenu("Force Apply Current Palette")]
     public void ForceApplyPalette()
     {
+        // (ОНОВЛЕНО): Цей метод тепер також має пересканувати сцену,
+        // на випадок, якщо рівень завантажився ПІСЛЯ запуску гри.
+        Debug.Log("Примусове сканування та застосування палітри...");
+        FindAndCacheAllRenderers();
+
         if (CurrentPalette != null)
         {
             ApplyPalette(CurrentPalette);

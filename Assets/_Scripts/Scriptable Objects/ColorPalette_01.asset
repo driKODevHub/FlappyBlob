@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a4598158e5871b428eaf6072361abe4, type: 3}
   m_Name: ColorPalette_01
   m_EditorClassIdentifier: Assembly-CSharp::ColorPaletteSO
-  WallAndBackgroundColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-  PaintAndPlayerColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  ObstacleColor: {r: 1, g: 0, b: 0, a: 1}
+  WallAndBackgroundColor: {r: 0.14901961, g: 0.050980397, b: 0.20392159, a: 1}
+  PaintAndPlayerColor: {r: 0.9215687, g: 0.7254902, b: 0.19607845, a: 1}
+  ObstacleColor: {r: 0.8862746, g: 0.2901961, b: 0.2901961, a: 1}

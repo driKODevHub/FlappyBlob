@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 4045836841957418729}
   - component: {fileID: 2058911758251399524}
   m_Layer: 0
-  m_Name: EyePupil
+  m_Name: EyePupil_Left
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -152,7 +152,7 @@ GameObject:
   - component: {fileID: 3160821614743111274}
   - component: {fileID: 6671280938271994600}
   m_Layer: 0
-  m_Name: EyePupil
+  m_Name: EyePupil_Right
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -291,7 +291,7 @@ GameObject:
   - component: {fileID: 8697142047682680656}
   - component: {fileID: 8247321192889613068}
   m_Layer: 0
-  m_Name: EyeBlick
+  m_Name: EyeBlick_Right
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -471,7 +471,7 @@ GameObject:
   - component: {fileID: 9013224858399868021}
   - component: {fileID: 2763515228105080411}
   m_Layer: 0
-  m_Name: EyeBallWhite
+  m_Name: EyeBallWhite_Right
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -665,7 +665,7 @@ GameObject:
   - component: {fileID: 9172904740342046482}
   - component: {fileID: 5743619182003600316}
   m_Layer: 0
-  m_Name: EyeBallWhite
+  m_Name: EyeBallWhite_Left
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -755,6 +755,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2131483692459601535}
   - component: {fileID: 2184120738755873172}
+  - component: {fileID: 8949148688949891349}
   - component: {fileID: 6151904697407724600}
   - component: {fileID: 528901113637795477}
   m_Layer: 6
@@ -817,6 +818,68 @@ MonoBehaviour:
   impactAnimationDuration: 0.13
   minImpactSpeed: 1
   maxImpactSpeed: 15
+--- !u!114 &8949148688949891349
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5339925670073217602}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcd1a7c8e0ed61642b3b72e563245f29, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerCosmeticRandomizer
+  bodyRenderer: {fileID: 187969292844905939}
+  mouthRenderer: {fileID: 3541196136385795261}
+  leftEyeBallRenderer: {fileID: 5743619182003600316}
+  leftEyePupilRenderer: {fileID: 4045836841957418729}
+  rightEyeBallRenderer: {fileID: 2763515228105080411}
+  rightEyePupilRenderer: {fileID: 3160821614743111274}
+  leftEyeTransform: {fileID: 8833252666329228346}
+  rightEyeTransform: {fileID: 7014844025331615660}
+  mouthTransform: {fileID: 2097488275155132305}
+  bodySprites: []
+  mouthSprites:
+  - {fileID: 21300000, guid: 0e6fe015b897ccb4d9e6b33d8db32a14, type: 3}
+  - {fileID: 21300000, guid: 894f57b1f61fb564981bb61836780d48, type: 3}
+  - {fileID: 21300000, guid: 8b4823db6d3ba424b813e21da1b81a42, type: 3}
+  - {fileID: 21300000, guid: 86dbf6a33570b7144a16f3593e5c3ada, type: 3}
+  - {fileID: 21300000, guid: 632b862c6ac9e514a8253cd9be88234b, type: 3}
+  - {fileID: 21300000, guid: bf8026737102ace45a5ed8d06499d6e7, type: 3}
+  - {fileID: 21300000, guid: 0f77b074c758a8f44b645eafce35f56d, type: 3}
+  - {fileID: 21300000, guid: f022c7289937de747b0fbea79b45a182, type: 3}
+  - {fileID: 21300000, guid: dd007074f7896104b9fb217acf45d15b, type: 3}
+  - {fileID: 21300000, guid: 1bf03d6c365f199468880cdebbe1d00e, type: 3}
+  - {fileID: 21300000, guid: b2190dfdbd7d18747ab019471dffdc3a, type: 3}
+  - {fileID: 21300000, guid: 83adae4bbf4bf5b468ef9a134f3b0397, type: 3}
+  - {fileID: 21300000, guid: e83f7fe32f4bc434fbc856d659c12dc8, type: 3}
+  - {fileID: 21300000, guid: fa7698800e262434c9ce9d3737150f79, type: 3}
+  - {fileID: 21300000, guid: 26f6a678cab116d42802af34c53814f4, type: 3}
+  eyeBallSprites: []
+  eyePupilSprites: []
+  antiRepeatCount: 3
+  minScalePercent: 0.9
+  maxScalePercent: 1.1
+  maxEyeAsymmetryPercent: 0.15
+  leftEyePositionBounds:
+    serializedVersion: 2
+    x: -0.6
+    y: -0.3
+    width: 0.2
+    height: 0.6
+  rightEyePositionBounds:
+    serializedVersion: 2
+    x: 0.48
+    y: -0.29
+    width: 0.22
+    height: 0.64
+  mouthPositionBounds:
+    serializedVersion: 2
+    x: -0.1
+    y: -0.5
+    width: 0.3
+    height: 0.2
 --- !u!114 &6151904697407724600
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1270,7 +1333,7 @@ GameObject:
   - component: {fileID: 702627237538999258}
   - component: {fileID: 6318268449435109787}
   m_Layer: 0
-  m_Name: EyeBlick
+  m_Name: EyeBlick_Left
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
