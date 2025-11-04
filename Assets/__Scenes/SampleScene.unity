@@ -414,7 +414,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxSplats: 500
-  waveFadeOutDelay: 0.05
+  waveFadeOutDelay: 0.08
 --- !u!4 &1352714202
 Transform:
   m_ObjectHideFlags: 0
@@ -459,7 +459,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7f0f6139ecf92684c8a209fb7fc3571e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
-  respawnDelay: 2
+  respawnDelay: 1
 --- !u!4 &1572224307
 Transform:
   m_ObjectHideFlags: 0
@@ -676,5 +676,5 @@ SceneRoots:
   - {fileID: 1572461249}
   - {fileID: 1352714202}
   - {fileID: 1902108780}
-  - {fileID: 8541836196931238003}
   - {fileID: 797017984}
+  - {fileID: 8541836196931238003}

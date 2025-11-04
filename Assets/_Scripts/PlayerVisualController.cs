@@ -6,6 +6,8 @@ using System.Collections;
 /// Керує ВСІМА візуальними ефектами гравця.
 /// (ОНОВЛЕНО): Тепер також спавнить клякси та партикли при ударі об стіну.
 /// (ОНОВЛЕНО 2): Додано ефект "сильного приземлення".
+/// (ОНОВЛЕНО 3): Додано ефект "pop-up" при спавні + виправлено race condition.
+/// (ОНОВЛЕНО 4): Виправлено баг з поворотом при скваші об стіну.
 /// </summary>
 public class PlayerVisualController : MonoBehaviour
 {
@@ -20,6 +22,10 @@ public class PlayerVisualController : MonoBehaviour
     [SerializeField] private Vector2 minMaxSquashForce = new Vector2(20f, 30f);
     [SerializeField] private MMSpringRotation mMSpringRotation;
     [SerializeField] private Vector2 minMaxSpringRotationForce = new Vector2(1000f, 1500f);
+
+    [Header("Компоненти Feel (Спавн)")]
+    [Tooltip("Спрінг-ефект для 'pop-up' при спавні.")]
+    [SerializeField] private MMSpringScale mMSpringScale;
 
     [Header("Ефекти Ударів (Стіни)")]
     [Tooltip("Префаб партиклів 'бризок', що спавняться при ударі.")]
@@ -37,7 +43,6 @@ public class PlayerVisualController : MonoBehaviour
     [SerializeField] private float minImpactSpeed = 1f;
     [SerializeField] private float maxImpactSpeed = 15f;
 
-    // --- (НОВИЙ РОЗДІЛ) ---
     [Header("Ефекти Сильного Приземлення (Стіни)")]
     [Tooltip("Префаб партиклів. (Підказка: можна с-дублювати 'deathParticlePrefab' і змінити 'Shape' на 'Cone')")]
     [SerializeField] private GameObject hardLandingParticlePrefab;
@@ -55,7 +60,6 @@ public class PlayerVisualController : MonoBehaviour
     [SerializeField] private float minParticleSpeed = 3f;
     [Tooltip("Швидкість партиклів при максимальній швидкості.")]
     [SerializeField] private float maxParticleSpeed = 8f;
-    // --- ---
 
     // --- Внутрішні змінні ---
     private Transform visualsTransform;
@@ -66,8 +70,12 @@ public class PlayerVisualController : MonoBehaviour
     {
         if (Instance != null && Instance != this) Destroy(gameObject);
         else Instance = this;
+
+        // Кешуємо компоненти Feel
         if (mMSpringSquashAndStretch == null) mMSpringSquashAndStretch = GetComponent<MMSpringSquashAndStretch>();
         if (mMSpringRotation == null) mMSpringRotation = GetComponent<MMSpringRotation>();
+        if (mMSpringScale == null) mMSpringScale = GetComponent<MMSpringScale>();
+
         if (playerRenderers == null || playerRenderers.Length == 0)
         {
             playerRenderers = GetComponentsInChildren<Renderer>();
@@ -75,8 +83,27 @@ public class PlayerVisualController : MonoBehaviour
             else Debug.LogWarning("PlayerVisualController: 'playerRenderers' порожній і не знайдено в дочірніх об'єктах.", this);
         }
         visualsTransform = transform;
-        visualsOriginalParent = transform.parent; // Зберігаємо посилання на кореневий об'єкт Гравця
+        visualsOriginalParent = transform.parent;
         if (collisionPivot == null) Debug.LogError("PlayerVisualController: 'Collision Pivot' не призначено!", this);
+    }
+
+    /// <summary>
+    /// (ОНОВЛЕНО) Запускає ефект "pop-up" при спавні/ресеті.
+    /// </summary>
+    public void PlaySpawnEffect()
+    {
+        if (mMSpringScale == null)
+        {
+            Debug.LogWarning("PlayerVisualController: MMSpringScale не призначено! Ефект спавну не працюватиме.", this);
+            return;
+        }
+
+        // 1. Миттєво ховаємо візуал (встановлюємо скейл в 0)
+        mMSpringScale.MoveToInstant(Vector3.zero);
+
+        // 2. (ВИПРАВЛЕНО) Чітко кажемо спрінгу рухатись до Vector3.one.
+        // Це надійніше, ніж RestoreInitialValue(), бо не залежить від кешування.
+        mMSpringScale.MoveTo(Vector3.one);
     }
 
     public void PlayJumpEffect()
@@ -137,7 +164,6 @@ public class PlayerVisualController : MonoBehaviour
         StartCoroutine(WallImpactCoroutine(contactPoint, contactNormal, impactMagnitude));
     }
 
-    // --- (ОНОВЛЕНИЙ МЕТОД) ---
     /// <summary>
     /// **ПУБЛІЧНИЙ МЕТОД**
     /// Спавнить партикли "сильного приземлення", динамічно налаштовуючи їх.
@@ -149,7 +175,6 @@ public class PlayerVisualController : MonoBehaviour
         if (impactMagnitude < minLandingSpeed) return;
 
         // 2. Створюємо інстанс
-        // (ВИПРАВЛЕНО): Спавнимо в центрі гравця (visualsOriginalParent), а не в точці контакту.
         Vector3 spawnPosition = visualsOriginalParent.position;
         GameObject particleInstance = Instantiate(hardLandingParticlePrefab, spawnPosition, Quaternion.identity);
 
@@ -177,7 +202,7 @@ public class PlayerVisualController : MonoBehaviour
 
         // 5. Налаштовуємо Модуль Емісії (Emission)
         var emissionModule = ps.emission;
-        emissionModule.enabled = true; // Переконуємось, що модуль увімкнено
+        emissionModule.enabled = true;
         int particleCount = (int)Mathf.Lerp(minParticleCount, maxParticleCount, force);
 
         var burstArray = new ParticleSystem.Burst[1];
@@ -185,15 +210,12 @@ public class PlayerVisualController : MonoBehaviour
         emissionModule.SetBursts(burstArray);
 
         // 6. Налаштовуємо Поворот (Shape)
-        // (ТУТ БЕЗ ЗМІН): Напрямок все ще залежить від 'contactNormal',
-        // щоб конус "вистрілив" вгору, ВІД землі.
         float angle = Vector2.SignedAngle(Vector2.up, contactNormal);
         particleInstance.transform.rotation = Quaternion.Euler(0, 0, angle);
 
         // 7. Запускаємо
         ps.Play();
     }
-    // --- ---
 
     /// <summary>
     /// Корутина, що анімує 'Visuals'.
@@ -201,7 +223,11 @@ public class PlayerVisualController : MonoBehaviour
     private IEnumerator WallImpactCoroutine(Vector2 contactPoint, Vector2 contactNormal, float impactMagnitude)
     {
         isImpacting = true;
-        Quaternion visualOriginalWorldRotation = visualsTransform.rotation;
+
+        // (ВИПРАВЛЕНО): Зберігаємо стабільний поворот кореневого об'єкта,
+        // а не візуалу, що обертається.
+        Quaternion stableWorldRotation = visualsOriginalParent.rotation;
+
         collisionPivot.position = contactPoint;
         collisionPivot.up = contactNormal;
         visualsTransform.SetParent(collisionPivot, true);
@@ -219,7 +245,8 @@ public class PlayerVisualController : MonoBehaviour
         while (elapsedTime < halfDuration)
         {
             collisionPivot.localScale = Vector3.Lerp(originalScale, squashScale, elapsedTime / halfDuration);
-            visualsTransform.rotation = visualOriginalWorldRotation;
+            // (ВИПРАВЛЕНО): Утримуємо стабільний поворот
+            visualsTransform.rotation = stableWorldRotation;
             elapsedTime += Time.deltaTime;
             yield return null;
         }
@@ -229,7 +256,8 @@ public class PlayerVisualController : MonoBehaviour
         while (elapsedTime < halfDuration)
         {
             collisionPivot.localScale = Vector3.Lerp(squashScale, originalScale, elapsedTime / halfDuration);
-            visualsTransform.rotation = visualOriginalWorldRotation;
+            // (ВИПРАВЛЕНО): Утримуємо стабільний поворот
+            visualsTransform.rotation = stableWorldRotation;
             elapsedTime += Time.deltaTime;
             yield return null;
         }
@@ -237,7 +265,8 @@ public class PlayerVisualController : MonoBehaviour
         // 5. Очищення
         collisionPivot.localScale = Vector3.one;
         visualsTransform.SetParent(visualsOriginalParent, true);
-        visualsTransform.rotation = visualOriginalWorldRotation;
+        // (ВИПРАВЛЕНО): Відновлюємо стабільний поворот
+        visualsTransform.rotation = stableWorldRotation;
         collisionPivot.rotation = Quaternion.identity;
         isImpacting = false;
     }

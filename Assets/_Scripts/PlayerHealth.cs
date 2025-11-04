@@ -3,6 +3,7 @@ using UnityEngine;
 /// <summary>
 /// Керує здоров'ям, смертю та створенням ефектів смерті для гравця.
 /// (ОНОВЛЕНО): Тепер також викликає 'PlayerCosmeticRandomizer' при ресеті.
+/// (ОНОВЛЕНО 2): Додано ефект "pop-up" при ресеті.
 /// </summary>
 [RequireComponent(typeof(PlayerController), typeof(Collider2D), typeof(Rigidbody2D))]
 public class PlayerHealth : MonoBehaviour
@@ -88,10 +89,16 @@ public class PlayerHealth : MonoBehaviour
             PlayerCosmeticRandomizer.Instance.RandomizeCosmetics();
         }
 
-        // 4. Вмикаємо колайдер
+        // 4. (НОВЕ!) Запускаємо ефект появи
+        if (PlayerVisualController.Instance != null)
+        {
+            PlayerVisualController.Instance.PlaySpawnEffect();
+        }
+
+        // 5. Вмикаємо колайдер (раніше був 4)
         if (playerCollider != null) playerCollider.enabled = true;
 
-        // 5. Скидаємо прапорець смерті
+        // 6. Скидаємо прапорець смерті (раніше був 5)
         isDead = false;
     }
 }
