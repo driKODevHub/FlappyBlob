@@ -5,6 +5,7 @@ using System.Collections;
 /// <summary>
 /// Керує ВСІМА візуальними ефектами гравця.
 /// (ОНОВЛЕНО): Тепер також спавнить клякси та партикли при ударі об стіну.
+/// (ОНОВЛЕНО 2): Додано ефект "сильного приземлення".
 /// </summary>
 public class PlayerVisualController : MonoBehaviour
 {
@@ -20,37 +21,49 @@ public class PlayerVisualController : MonoBehaviour
     [SerializeField] private MMSpringRotation mMSpringRotation;
     [SerializeField] private Vector2 minMaxSpringRotationForce = new Vector2(1000f, 1500f);
 
-    // --- (НОВИЙ РОЗДІЛ з минулого разу) ---
     [Header("Ефекти Ударів (Стіни)")]
     [Tooltip("Префаб партиклів 'бризок', що спавняться при ударі.")]
     [SerializeField] private GameObject wallHitParticlePrefab;
     [Tooltip("Префаб клякси, що спавниться при ударі.")]
     [SerializeField] private GameObject splatPrefab;
-    // --- ---
 
     [Header("Налаштування Сквашу (Удар об стіну)")]
     [SerializeField] private Transform collisionPivot;
-    [Tooltip("Наскільки сильно сквашити при МАКСИМАЛЬНІЙ швидкості.")]
     [SerializeField] private float impactSquashAmount = 0.8f;
-    [Tooltip("Наскільки сильно розтягнути при МАКСИМАЛЬНІЙ швидкості.")]
     [SerializeField] private float impactStretchAmount = 1.2f;
     [SerializeField] private float impactAnimationDuration = 0.2f;
 
-    [Header("Налаштування Динамічного Сквашу")]
-    [Tooltip("Мінімальна швидкість удару, щоб ефект спрацював.")]
+    [Header("Налаштування Динамічного Сквашу (Удар)")]
     [SerializeField] private float minImpactSpeed = 1f;
-    [Tooltip("Швидкість удару, при якій ефект досягне 100% сили (impactSquashAmount).")]
     [SerializeField] private float maxImpactSpeed = 15f;
 
+    // --- (НОВИЙ РОЗДІЛ) ---
+    [Header("Ефекти Сильного Приземлення (Стіни)")]
+    [Tooltip("Префаб партиклів. (Підказка: можна с-дублювати 'deathParticlePrefab' і змінити 'Shape' на 'Cone')")]
+    [SerializeField] private GameObject hardLandingParticlePrefab;
+    [Tooltip("Мінімальна швидкість удару об стіну, щоб спрацював ефект.")]
+    [SerializeField] private float minLandingSpeed = 8f;
+    [Tooltip("Швидкість удару, при якій ефект досягне 100% сили.")]
+    [SerializeField] private float maxSpeedForLandingParticles = 20f;
+    [Space]
+    [Tooltip("Кількість партиклів при мінімальній швидкості.")]
+    [SerializeField] private int minParticleCount = 10;
+    [Tooltip("Кількість партиклів при максимальній швидкості.")]
+    [SerializeField] private int maxParticleCount = 30;
+    [Space]
+    [Tooltip("Швидкість партиклів при мінімальній швидкості.")]
+    [SerializeField] private float minParticleSpeed = 3f;
+    [Tooltip("Швидкість партиклів при максимальній швидкості.")]
+    [SerializeField] private float maxParticleSpeed = 8f;
+    // --- ---
 
     // --- Внутрішні змінні ---
     private Transform visualsTransform;
-    private Transform visualsOriginalParent;
+    private Transform visualsOriginalParent; // Це Transform кореневого об'єкта Гравця
     private bool isImpacting = false;
 
     private void Awake()
     {
-        // (ТВІЙ КОД з минулого разу)
         if (Instance != null && Instance != this) Destroy(gameObject);
         else Instance = this;
         if (mMSpringSquashAndStretch == null) mMSpringSquashAndStretch = GetComponent<MMSpringSquashAndStretch>();
@@ -62,18 +75,16 @@ public class PlayerVisualController : MonoBehaviour
             else Debug.LogWarning("PlayerVisualController: 'playerRenderers' порожній і не знайдено в дочірніх об'єктах.", this);
         }
         visualsTransform = transform;
-        visualsOriginalParent = transform.parent;
+        visualsOriginalParent = transform.parent; // Зберігаємо посилання на кореневий об'єкт Гравця
         if (collisionPivot == null) Debug.LogError("PlayerVisualController: 'Collision Pivot' не призначено!", this);
     }
 
-    // (ТВІЙ КОД з минулого разу)
     public void PlayJumpEffect()
     {
         if (mMSpringSquashAndStretch != null) mMSpringSquashAndStretch.Bump(Random.Range(minMaxSquashForce.x, minMaxSquashForce.y));
         if (mMSpringRotation != null) mMSpringRotation.Bump(new Vector3(0, 0, Random.Range(minMaxSpringRotationForce.x, minMaxSpringRotationForce.y) * (Random.Range(0, 2) * 2 - 1)));
     }
 
-    // (ТВІЙ КОД з минулого разу)
     public void PlayDeathEffect(Vector3 deathPosition)
     {
         foreach (var renderer in playerRenderers) { if (renderer != null) renderer.enabled = false; }
@@ -81,15 +92,12 @@ public class PlayerVisualController : MonoBehaviour
         else Debug.LogError("PlayerVisualController: Префаб частинок смерті не призначено!", this);
     }
 
-    // (ТВІЙ КОД з минулого разу)
     public void ResetVisuals()
     {
         foreach (var renderer in playerRenderers) { if (renderer != null) renderer.enabled = true; }
     }
 
-    // --- (НОВИЙ МЕТОД з минулого разу) ---
     /// <summary>
-    /// **ПУБЛІЧНИЙ МЕТОД**
     /// Спавнить кляксу та партикли "бризок" у точці контакту.
     /// </summary>
     public void PlayWallHitEffects(Vector2 contactPoint, Vector2 contactNormal)
@@ -97,14 +105,9 @@ public class PlayerVisualController : MonoBehaviour
         // 1. Спавн партиклів "бризок"
         if (wallHitParticlePrefab != null)
         {
-            // (ВИПРАВЛЕНО): Розраховуємо кут повороту ТІЛЬКИ навколо осі Z
-            // Припускаємо, що партикли "дивляться" вгору (Vector2.up) по дефолту
             float angle = Vector2.SignedAngle(Vector2.up, contactNormal);
             Quaternion rotation2D = Quaternion.Euler(0, 0, angle);
-
-            GameObject particleInstance = Instantiate(wallHitParticlePrefab, (Vector3)contactPoint, rotation2D); // (ЗМІНЕНО)
-
-            // (НОВЕ): Встановлюємо колір партиклів з PaletteManager
+            GameObject particleInstance = Instantiate(wallHitParticlePrefab, (Vector3)contactPoint, rotation2D);
             if (PaletteManager.Instance != null && PaletteManager.Instance.CurrentPalette != null)
             {
                 var mainModule = particleInstance.GetComponent<ParticleSystem>().main;
@@ -112,27 +115,19 @@ public class PlayerVisualController : MonoBehaviour
             }
         }
 
-        // 2. Спавн клякси (ТУТ БЕЗ ЗМІН)
+        // 2. Спавн клякси
         if (splatPrefab != null)
         {
-            // Клякса спавниться без повороту (Quaternion.identity), 
-            // а її скрипт 'SplatAppearance' сам задає випадковий Z-поворот.
             GameObject splatInstance = Instantiate(splatPrefab, contactPoint, Quaternion.identity);
             if (SplatManager.Instance != null)
             {
                 SplatManager.Instance.AddSplat(splatInstance);
             }
-            else
-            {
-                Debug.LogWarning("SplatManager не знайдено, клякса не була зареєстрована.");
-            }
         }
     }
-    // --- ---
 
 
     /// <summary>
-    /// **ПУБЛІЧНИЙ МЕТОД (ТВІЙ КОД з минулого разу)**
     /// Запускає корутину анімації "сквашу".
     /// </summary>
     public void PlayWallImpactEffect(Vector2 contactPoint, Vector2 contactNormal, float impactMagnitude)
@@ -142,8 +137,66 @@ public class PlayerVisualController : MonoBehaviour
         StartCoroutine(WallImpactCoroutine(contactPoint, contactNormal, impactMagnitude));
     }
 
+    // --- (ОНОВЛЕНИЙ МЕТОД) ---
     /// <summary>
-    /// Корутина, що анімує 'Visuals'. (ТВІЙ КОД з минулого разу)
+    /// **ПУБЛІЧНИЙ МЕТОД**
+    /// Спавнить партикли "сильного приземлення", динамічно налаштовуючи їх.
+    /// </summary>
+    public void PlayHardLandingEffect(Vector2 contactPoint, Vector2 contactNormal, float impactMagnitude)
+    {
+        // 1. Перевірка швидкості та префабу
+        if (hardLandingParticlePrefab == null) return;
+        if (impactMagnitude < minLandingSpeed) return;
+
+        // 2. Створюємо інстанс
+        // (ВИПРАВЛЕНО): Спавнимо в центрі гравця (visualsOriginalParent), а не в точці контакту.
+        Vector3 spawnPosition = visualsOriginalParent.position;
+        GameObject particleInstance = Instantiate(hardLandingParticlePrefab, spawnPosition, Quaternion.identity);
+
+        ParticleSystem ps = particleInstance.GetComponent<ParticleSystem>();
+        if (ps == null)
+        {
+            Debug.LogError("HardLandingEffect: Префаб не має компонента ParticleSystem!", particleInstance);
+            Destroy(particleInstance);
+            return;
+        }
+
+        // 3. Розраховуємо силу (0..1)
+        float force = Mathf.InverseLerp(minLandingSpeed, maxSpeedForLandingParticles, impactMagnitude);
+        force = Mathf.Clamp01(force);
+
+        // 4. Налаштовуємо Головний модуль (Main)
+        var mainModule = ps.main;
+        float particleSpeed = Mathf.Lerp(minParticleSpeed, maxParticleSpeed, force);
+        mainModule.startSpeed = particleSpeed;
+
+        if (PaletteManager.Instance != null && PaletteManager.Instance.CurrentPalette != null)
+        {
+            mainModule.startColor = PaletteManager.Instance.CurrentPalette.PaintAndPlayerColor;
+        }
+
+        // 5. Налаштовуємо Модуль Емісії (Emission)
+        var emissionModule = ps.emission;
+        emissionModule.enabled = true; // Переконуємось, що модуль увімкнено
+        int particleCount = (int)Mathf.Lerp(minParticleCount, maxParticleCount, force);
+
+        var burstArray = new ParticleSystem.Burst[1];
+        burstArray[0] = new ParticleSystem.Burst(0.0f, (short)particleCount);
+        emissionModule.SetBursts(burstArray);
+
+        // 6. Налаштовуємо Поворот (Shape)
+        // (ТУТ БЕЗ ЗМІН): Напрямок все ще залежить від 'contactNormal',
+        // щоб конус "вистрілив" вгору, ВІД землі.
+        float angle = Vector2.SignedAngle(Vector2.up, contactNormal);
+        particleInstance.transform.rotation = Quaternion.Euler(0, 0, angle);
+
+        // 7. Запускаємо
+        ps.Play();
+    }
+    // --- ---
+
+    /// <summary>
+    /// Корутина, що анімує 'Visuals'.
     /// </summary>
     private IEnumerator WallImpactCoroutine(Vector2 contactPoint, Vector2 contactNormal, float impactMagnitude)
     {

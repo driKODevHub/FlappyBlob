@@ -3,6 +3,7 @@ using UnityEngine;
 /// <summary>
 /// Обробляє всі фізичні зіткнення гравця.
 /// (ОНОВЛЕНО): Тепер просто роздає команди контролерам, не спавнить префаби.
+/// (ОНОВЛЕНО 2): Додано виклик ефекту сильного приземлення.
 /// </summary>
 [RequireComponent(typeof(PlayerHealth), typeof(PlayerController), typeof(Rigidbody2D))]
 public class PlayerCollisionHandler : MonoBehaviour
@@ -10,9 +11,6 @@ public class PlayerCollisionHandler : MonoBehaviour
     [Header("Налаштування Шару")]
     [SerializeField] private LayerMask obstacleLayer;
     [SerializeField] private LayerMask wallLayer;
-
-    // (ВИДАЛЕНО): Префаб клякси переїхав у PlayerVisualController
-    // [SerializeField] private GameObject splatPrefab; 
 
     [Header("Налаштування клякс (Стіни)")]
     [Tooltip("Кулдаун на спавн клякс ТА ефектів удару.")]
@@ -55,7 +53,7 @@ public class PlayerCollisionHandler : MonoBehaviour
                 ContactPoint2D contact = collision.contacts[0];
                 float impactMagnitude = collision.relativeVelocity.magnitude;
 
-                // --- (ОНОВЛЕНО): Викликаємо ОБИДВА візуальні ефекти ---
+                // --- (ОНОВЛЕНО): Викликаємо ВСІ візуальні ефекти ---
 
                 // 2а. Спавнимо кляксу ТА партикли (Візуал)
                 PlayerVisualController.Instance.PlayWallHitEffects(contact.point, contact.normal);
@@ -63,12 +61,12 @@ public class PlayerCollisionHandler : MonoBehaviour
                 // 2b. Анімуємо скваш (Візуал)
                 PlayerVisualController.Instance.PlayWallImpactEffect(contact.point, contact.normal, impactMagnitude);
 
-                // 2c. Застосовуємо відскок (Фізика)
+                // 2c. (НОВЕ): Спавнимо партикли сильного приземлення (Візуал)
+                PlayerVisualController.Instance.PlayHardLandingEffect(contact.point, contact.normal, impactMagnitude);
+
+                // 2d. Застосовуємо відскок (Фізика)
                 PlayerController.Instance.ApplyWallBounce(contact.normal);
             }
         }
     }
-
-    // (ВИДАЛЕНО): Метод SpawnSplat() переїхав у PlayerVisualController
 }
-

@@ -818,6 +818,13 @@ MonoBehaviour:
   impactAnimationDuration: 0.13
   minImpactSpeed: 1
   maxImpactSpeed: 15
+  hardLandingParticlePrefab: {fileID: 8333873712351279718, guid: 2375d4ec69524964b84099eba3deccf4, type: 3}
+  minLandingSpeed: 13
+  maxSpeedForLandingParticles: 25
+  minParticleCount: 3
+  maxParticleCount: 6
+  minParticleSpeed: 4
+  maxParticleSpeed: 10
 --- !u!114 &8949148688949891349
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -861,25 +868,25 @@ MonoBehaviour:
   antiRepeatCount: 3
   minScalePercent: 0.9
   maxScalePercent: 1.1
-  maxEyeAsymmetryPercent: 0.15
+  maxEyeAsymmetryPercent: 0.05
   leftEyePositionBounds:
     serializedVersion: 2
-    x: -0.6
-    y: -0.3
-    width: 0.2
-    height: 0.6
+    x: -0.58
+    y: -0.16
+    width: 0.16
+    height: 0.4
   rightEyePositionBounds:
     serializedVersion: 2
-    x: 0.48
-    y: -0.29
-    width: 0.22
-    height: 0.64
+    x: 0.58
+    y: -0.17
+    width: 0.16
+    height: 0.4
   mouthPositionBounds:
     serializedVersion: 2
-    x: -0.1
-    y: -0.5
-    width: 0.3
-    height: 0.2
+    x: -0.06
+    y: -0.42
+    width: 0.2
+    height: 0.14
 --- !u!114 &6151904697407724600
 MonoBehaviour:
   m_ObjectHideFlags: 0
