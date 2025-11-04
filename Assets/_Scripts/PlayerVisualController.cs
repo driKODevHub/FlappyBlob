@@ -1,13 +1,11 @@
 using MoreMountains.Feedbacks;
+using MoreMountains.Tools; // Потрібно для MMSpring
 using UnityEngine;
 using System.Collections;
 
 /// <summary>
 /// Керує ВСІМА візуальними ефектами гравця.
-/// (ОНОВЛЕНО): Тепер також спавнить клякси та партикли при ударі об стіну.
-/// (ОНОВЛЕНО 2): Додано ефект "сильного приземлення".
-/// (ОНОВЛЕНО 3): Додано ефект "pop-up" при спавні + виправлено race condition.
-/// (ОНОВЛЕНО 4): Виправлено баг з поворотом при скваші об стіну.
+/// (ОНОВЛЕНО 10): Реалізовано смерть через MoveTo() на MMSpringScale (без зміни параметрів).
 /// </summary>
 public class PlayerVisualController : MonoBehaviour
 {
@@ -26,6 +24,14 @@ public class PlayerVisualController : MonoBehaviour
     [Header("Компоненти Feel (Спавн)")]
     [Tooltip("Спрінг-ефект для 'pop-up' при спавні.")]
     [SerializeField] private MMSpringScale mMSpringScale;
+
+    // (НОВИЙ БЛОК)
+    [Header("Ефекти Смерті (Pop)")]
+    [Tooltip("Масштаб, до якого 'роздувається' гравець перед смертю.")]
+    [SerializeField] private Vector3 deathInflateScale = new Vector3(1.5f, 1.5f, 1f);
+    [Tooltip("Час в секундах, який ми чекаємо, поки гравець 'роздувається' перед тим як 'лопнути'.")]
+    [SerializeField] private float deathInflateDuration = 0.15f;
+    // (КІНЕЦЬ НОВОГО БЛОКУ)
 
     [Header("Ефекти Ударів (Стіни)")]
     [Tooltip("Префаб партиклів 'бризок', що спавняться при ударі.")]
@@ -65,6 +71,7 @@ public class PlayerVisualController : MonoBehaviour
     private Transform visualsTransform;
     private Transform visualsOriginalParent; // Це Transform кореневого об'єкта Гравця
     private bool isImpacting = false;
+    private Vector3 baseVisualScale; // (НОВЕ) Зберігаємо базовий масштаб
 
     private void Awake()
     {
@@ -84,6 +91,7 @@ public class PlayerVisualController : MonoBehaviour
         }
         visualsTransform = transform;
         visualsOriginalParent = transform.parent;
+        baseVisualScale = visualsTransform.localScale; // (НОВЕ)
         if (collisionPivot == null) Debug.LogError("PlayerVisualController: 'Collision Pivot' не призначено!", this);
     }
 
@@ -101,9 +109,8 @@ public class PlayerVisualController : MonoBehaviour
         // 1. Миттєво ховаємо візуал (встановлюємо скейл в 0)
         mMSpringScale.MoveToInstant(Vector3.zero);
 
-        // 2. (ВИПРАВЛЕНО) Чітко кажемо спрінгу рухатись до Vector3.one.
-        // Це надійніше, ніж RestoreInitialValue(), бо не залежить від кешування.
-        mMSpringScale.MoveTo(Vector3.one);
+        // 2. (ВИПРАВЛЕНО) Чітко кажемо спрінгу рухатись до базового масштабу.
+        mMSpringScale.MoveTo(baseVisualScale);
     }
 
     public void PlayJumpEffect()
@@ -123,6 +130,37 @@ public class PlayerVisualController : MonoBehaviour
     {
         foreach (var renderer in playerRenderers) { if (renderer != null) renderer.enabled = true; }
     }
+
+
+    /// <summary>
+    /// (ПОВНІСТЮ ПЕРЕРОБЛЕНО) Корутина для анімації "роздування" та "лопання".
+    /// Викликається з PlayerHealth.
+    /// </summary>
+    public IEnumerator PlayInflateAndPopSequence()
+    {
+        if (mMSpringScale == null)
+        {
+            Debug.LogWarning("PlayerVisualController: MMSpringScale не призначено! Ефект смерті (Pop) не працюватиме.", this);
+            // Фоллбек: просто ховаємо і спавнимо партикли
+            PlayDeathEffect(transform.position);
+            yield break; // Виходимо з корутини
+        }
+
+        // 1. Запускаємо рух до "роздутого" стану.
+        // Анімація буде залежати від налаштувань Damping/Frequency
+        // компонента MMSpringScale в інспекторі.
+        mMSpringScale.MoveTo(deathInflateScale);
+
+        // 2. Чекаємо фіксований час (0.15с), поки анімація програється
+        yield return new WaitForSeconds(deathInflateDuration);
+
+        // 3. "Лопаємось": Ховаємо візуал і спавнимо партикли
+        PlayDeathEffect(transform.position);
+
+        // 4. Миттєво скидаємо скейл (поки візуал невидимий), готуючись до спавну.
+        mMSpringScale.MoveToInstant(baseVisualScale);
+    }
+
 
     /// <summary>
     /// Спавнить кляксу та партикли "бризок" у точці контакту.
@@ -206,6 +244,7 @@ public class PlayerVisualController : MonoBehaviour
         int particleCount = (int)Mathf.Lerp(minParticleCount, maxParticleCount, force);
 
         var burstArray = new ParticleSystem.Burst[1];
+        // (ВИПРАВЛЕНО) Тут був одрук 'ParticleDSystem'
         burstArray[0] = new ParticleSystem.Burst(0.0f, (short)particleCount);
         emissionModule.SetBursts(burstArray);
 
@@ -237,8 +276,8 @@ public class PlayerVisualController : MonoBehaviour
         float currentStretch = Mathf.Lerp(1f, impactStretchAmount, normalizedSpeed);
 
         float elapsedTime = 0f;
-        Vector3 originalScale = Vector3.one;
-        Vector3 squashScale = new Vector3(currentStretch, currentSquash, 1f);
+        Vector3 originalScale = baseVisualScale; // (ОНОВЛЕНО)
+        Vector3 squashScale = new Vector3(currentStretch * baseVisualScale.x, currentSquash * baseVisualScale.y, baseVisualScale.z); // (ОНОВЛЕНО)
         float halfDuration = impactAnimationDuration / 2f;
 
         // Фаза 1: Скваш
@@ -263,7 +302,7 @@ public class PlayerVisualController : MonoBehaviour
         }
 
         // 5. Очищення
-        collisionPivot.localScale = Vector3.one;
+        collisionPivot.localScale = baseVisualScale; // (ОНОВЛЕНО)
         visualsTransform.SetParent(visualsOriginalParent, true);
         // (ВИПРАВЛЕНО): Відновлюємо стабільний поворот
         visualsTransform.rotation = stableWorldRotation;

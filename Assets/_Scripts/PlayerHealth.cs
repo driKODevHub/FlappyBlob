@@ -1,9 +1,9 @@
 using UnityEngine;
+using System.Collections; // (ДОДАНО): Потрібно для корутин
 
 /// <summary>
 /// Керує здоров'ям, смертю та створенням ефектів смерті для гравця.
-/// (ОНОВЛЕНО): Тепер також викликає 'PlayerCosmeticRandomizer' при ресеті.
-/// (ОНОВЛЕНО 2): Додано ефект "pop-up" при ресеті.
+/// (ОНОВЛЕНО 3): Тепер запускає корутину смерті, щоб візуал "лопнув" ПЕРЕД респавном.
 /// </summary>
 [RequireComponent(typeof(PlayerController), typeof(Collider2D), typeof(Rigidbody2D))]
 public class PlayerHealth : MonoBehaviour
@@ -37,27 +37,39 @@ public class PlayerHealth : MonoBehaviour
 
     /// <summary>
     /// Основна логіка смерті гравця.
+    /// (ОНОВЛЕНО): Тепер запускає корутину.
     /// </summary>
     public void Die()
     {
         if (isDead) return;
         isDead = true;
 
-        // 1. (ОНОВЛЕНО): Вимикаємо візуал через PlayerVisualController
-        if (PlayerVisualController.Instance != null)
-        {
-            PlayerVisualController.Instance.PlayDeathEffect(transform.position);
-        }
-
-        // 2. Вимикаємо керування та фізичну колізію
+        // 1. (НОВЕ) Негайно вимикаємо керування та фізику
         if (playerController != null) playerController.enabled = false;
         if (playerCollider != null) playerCollider.enabled = false;
 
-        // 3. Зупиняємо будь-який рух
+        // 2. (НОВЕ) Зупиняємо будь-який рух
         rb.bodyType = RigidbodyType2D.Kinematic;
         rb.linearVelocity = Vector2.zero;
 
-        // 4. Повідомляємо GameManager
+        // 3. (НОВЕ) Запускаємо візуальну частину смерті
+        StartCoroutine(DeathSequenceCoroutine());
+    }
+
+    /// <summary>
+    /// (НОВЕ) Корутина, що програє візуал смерті,
+    /// і ТІЛЬКИ ПІСЛЯ цього повідомляє GameManager про респавн.
+    /// </summary>
+    private IEnumerator DeathSequenceCoroutine()
+    {
+        // 1. Запускаємо візуал "лопання" і чекаємо його завершення
+        if (PlayerVisualController.Instance != null)
+        {
+            // Ми чекаємо, поки корутина в PlayerVisualController завершиться
+            yield return StartCoroutine(PlayerVisualController.Instance.PlayInflateAndPopSequence());
+        }
+
+        // 2. Тепер, коли анімація завершилась, повідомляємо GameManager
         if (GameManager.Instance != null)
         {
             GameManager.Instance.StartRespawnProcess();
@@ -67,6 +79,7 @@ public class PlayerHealth : MonoBehaviour
             Debug.LogError("GameManager не знайдено! Гравець не респавниться.", this);
         }
     }
+
 
     /// <summary>
     /// **ПУБЛІЧНИЙ МЕТОД**
@@ -102,3 +115,4 @@ public class PlayerHealth : MonoBehaviour
         isDead = false;
     }
 }
+
