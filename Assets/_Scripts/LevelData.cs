@@ -68,4 +68,13 @@ public class LevelData : MonoBehaviour
             }
         }
     }
+
+    /// <summary>
+    /// **(НОВИЙ) ПУБЛІЧНИЙ МЕТОД**
+    /// Повертає масив усіх точок інтересу на рівні.
+    /// </summary>
+    public UnlockPoint[] GetUnlockPoints()
+    {
+        return unlockPoints;
+    }
 }

@@ -1,5 +1,36 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1183125503519898952
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3059198699927973303}
+  m_Layer: 6
+  m_Name: EyeRestingTarget
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3059198699927973303
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1183125503519898952}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2131483692459601535}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1586939240868642825
 GameObject:
   m_ObjectHideFlags: 0
@@ -112,16 +143,16 @@ MonoBehaviour:
   FollowRotation: 0
   FollowScale: 1
   FollowScaleFactor: 1
-  Target: {fileID: 0}
+  Target: {fileID: 4319451333840889504}
   Offset: {x: 0, y: 0, z: 0}
   AddInitialDistanceXToXOffset: 0
   AddInitialDistanceYToYOffset: 0
   AddInitialDistanceZToZOffset: 0
   InterpolatePosition: 1
   FollowPositionMode: 1
-  FollowPositionSpeed: 10
-  PositionSpringDamping: 0.3
-  PositionSpringFrequency: 3
+  FollowPositionSpeed: 1
+  PositionSpringDamping: 0.092
+  PositionSpringFrequency: 0.1
   InterpolateRotation: 0
   FollowRotationMode: 1
   FollowRotationSpeed: 10
@@ -132,7 +163,7 @@ MonoBehaviour:
   FollowScaleSpeed: 10
   ScaleSpringDamping: 0.3
   ScaleSpringFrequency: 3
-  UpdateMode: 0
+  UpdateMode: 1
   DisableSelfOnSetActiveFalse: 0
   UseMinimumDistanceBeforeFollow: 0
   MinimumDistanceBeforeFollow: 1
@@ -252,16 +283,16 @@ MonoBehaviour:
   FollowRotation: 0
   FollowScale: 1
   FollowScaleFactor: 1
-  Target: {fileID: 0}
+  Target: {fileID: 4319451333840889504}
   Offset: {x: 0, y: 0, z: 0}
   AddInitialDistanceXToXOffset: 0
   AddInitialDistanceYToYOffset: 0
   AddInitialDistanceZToZOffset: 0
   InterpolatePosition: 1
   FollowPositionMode: 1
-  FollowPositionSpeed: 10
-  PositionSpringDamping: 0.3
-  PositionSpringFrequency: 3
+  FollowPositionSpeed: 1
+  PositionSpringDamping: 0.092
+  PositionSpringFrequency: 0.1
   InterpolateRotation: 0
   FollowRotationMode: 1
   FollowRotationSpeed: 10
@@ -272,7 +303,7 @@ MonoBehaviour:
   FollowScaleSpeed: 10
   ScaleSpringDamping: 0.3
   ScaleSpringFrequency: 3
-  UpdateMode: 0
+  UpdateMode: 1
   DisableSelfOnSetActiveFalse: 0
   UseMinimumDistanceBeforeFollow: 0
   MinimumDistanceBeforeFollow: 1
@@ -756,6 +787,7 @@ GameObject:
   - component: {fileID: 2131483692459601535}
   - component: {fileID: 2184120738755873172}
   - component: {fileID: 8949148688949891349}
+  - component: {fileID: 6568891212789398193}
   - component: {fileID: 6151904697407724600}
   - component: {fileID: 528901113637795477}
   - component: {fileID: 6318862134243971485}
@@ -783,6 +815,8 @@ Transform:
   - {fileID: 1757657762644933857}
   - {fileID: 7014844025331615660}
   - {fileID: 8833252666329228346}
+  - {fileID: 3059198699927973303}
+  - {fileID: 4319451333840889504}
   m_Father: {fileID: 9124395394078038403}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2184120738755873172
@@ -889,6 +923,27 @@ MonoBehaviour:
     y: -0.42
     width: 0.2
     height: 0.14
+--- !u!114 &6568891212789398193
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5339925670073217602}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e893c99ab3c77f44abe532eae2ef65be, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AdvancedEyeController
+  leftPupilFollow: {fileID: 6671280938271994600}
+  rightPupilFollow: {fileID: 2058911758251399524}
+  mouseTarget: {fileID: 4319451333840889504}
+  restingTarget: {fileID: 3059198699927973303}
+  minLookAtMouseTime: 3
+  maxLookAtMouseTime: 20
+  minRestTime: 1
+  maxRestTime: 3
+  unlockPointDetectRadius: 2.5
 --- !u!114 &6151904697407724600
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1151,6 +1206,50 @@ MonoBehaviour:
   TestBumpAmount: {x: 75, y: 100, z: 50}
   BumpToToolbar: 0
   OtherControlsToToolbar: 0
+--- !u!1 &5341614918815166527
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4319451333840889504}
+  - component: {fileID: 656715274362560580}
+  m_Layer: 0
+  m_Name: FollowMouse2D
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4319451333840889504
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5341614918815166527}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2131483692459601535}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &656715274362560580
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5341614918815166527}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48ad0bc1a45461c4fb199af9deff0b6b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FollowMouse2D
 --- !u!1 &5462700037160438417
 GameObject:
   m_ObjectHideFlags: 0
