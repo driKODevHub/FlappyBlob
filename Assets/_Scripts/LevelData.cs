@@ -4,6 +4,7 @@ using UnityEngine;
 /// (НОВИЙ) "Паспорт" рівня. 
 /// Цей компонент має висіти на КОРЕНЕВОМУ об'єкті префабу рівня.
 /// Він містить посилання на всі ключові елементи цього рівня.
+/// (ОНОВЛЕНО): Автоматично знаходить 'Unlock Points' в об'єкті-контейнері.
 /// </summary>
 public class LevelData : MonoBehaviour
 {
@@ -14,20 +15,39 @@ public class LevelData : MonoBehaviour
     [Tooltip("Скрипт виходу з цього рівня.")]
     [SerializeField] private LevelExit levelExit;
 
-    [Tooltip("Масив усіх 'Unlock Points', які є на цьому рівні.")]
-    [SerializeField] private UnlockPoint[] unlockPoints;
+    // (ОНОВЛЕНО): Тепер ми посилаємось на батьківський об'єкт
+    [Tooltip("Об'єкт-контейнер, що містить УСІ 'Unlock Points' цього рівня як дочірні об'єкти.")]
+    [SerializeField] private Transform unlockPointsContainer;
+
+    // (ОНОВЛЕНО): Це поле тепер заповнюється автоматично в Awake
+    private UnlockPoint[] unlockPoints;
 
     private void Awake()
     {
-        // Валідація
+        // Валідація SpawnPoint
         if (spawnPoint == null)
             Debug.LogError($"LevelData на '{gameObject.name}': 'Spawn Point' не призначено!", this);
 
+        // Валідація LevelExit
         if (levelExit == null)
             Debug.LogError($"LevelData на '{gameObject.name}': 'Level Exit' не призначено!", this);
 
-        if (unlockPoints == null || unlockPoints.Length == 0)
-            Debug.LogWarning($"LevelData на '{gameObject.name}': 'Unlock Points' не призначено.", this);
+        // (ОНОВЛЕНО): Логіка пошуку Unlock Points
+        if (unlockPointsContainer == null)
+        {
+            Debug.LogError($"LevelData на '{gameObject.name}': 'Unlock Points Container' не призначено!", this);
+            unlockPoints = new UnlockPoint[0]; // Створюємо порожній масив, щоб уникнути NullReference
+        }
+        else
+        {
+            // Знаходимо ВСІ компоненти UnlockPoint у дочірніх об'єктах
+            // (включно з неактивними, про всяк випадок)
+            unlockPoints = unlockPointsContainer.GetComponentsInChildren<UnlockPoint>(true);
+        }
+
+        // Валідація результату пошуку
+        if (unlockPoints.Length == 0)
+            Debug.LogWarning($"LevelData на '{gameObject.name}': 'Unlock Points Container' не містить жодного об'єкта з компонентом 'UnlockPoint'.", this);
     }
 
     /// <summary>

@@ -4,7 +4,8 @@ using System.Collections;
 
 /// <summary>
 /// Керує рухом та основними діями гравця.
-/// (ОНОВЛЕНО): Блокує рух, коли гравець "на землі", але дозволяє безкінечні стрибки.
+/// (ОНОВЛЕНО): Дозволяє рух (ковзання) на землі та безкінечні стрибки.
+/// (ОНОВЛЕНО 2): Додано окрему, слабшу силу відскоку для стелі.
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerController : MonoBehaviour
@@ -22,7 +23,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float jumpVelocity = 15f;
     [SerializeField] private float jumpCutMultiplier = 0.5f;
 
-    [Header("Параметри інерції в повітрі")]
+    [Header("Параметри інерції (в повітрі та на землі)")]
     [SerializeField] private bool useAirInertIA = true;
     [Range(0f, 1f)]
     [SerializeField] private float airDrag = 0.95f;
@@ -32,6 +33,12 @@ public class PlayerController : MonoBehaviour
     [Header("Налаштування Відскоку (Баунсу)")]
     [Range(0f, 1.5f)]
     [SerializeField] private float bounciness = 0.6f;
+
+    // (НОВЕ ПОЛЕ)
+    [Tooltip("Сила відскоку від стелі (має бути менше, ніж 'bounciness').")]
+    [Range(0f, 1.5f)]
+    [SerializeField] private float ceilingBounciness = 0.2f;
+
     [Tooltip("Час (в секундах), на який блокується керування РУХОМ (вліво/вправо) після удару об стіну.")]
     [SerializeField] private float knockbackLockoutDuration = 0.2f;
 
@@ -94,10 +101,18 @@ public class PlayerController : MonoBehaviour
         this.enabled = true;
     }
 
+    /// <summary>
+    /// (ОНОВЛЕНО): Тепер використовує різну силу відскоку для стелі та стін/підлоги.
+    /// </summary>
     public void ApplyWallBounce(Vector2 contactNormal)
     {
         Vector2 reflectedVelocity = Vector2.Reflect(lastFixedUpdateVelocity, contactNormal);
-        rb.linearVelocity = reflectedVelocity * bounciness;
+
+        // (ОНОВЛЕНО): Перевіряємо, чи це стеля (нормаль дивиться вниз)
+        bool isCeilingHit = contactNormal.y < -0.5f;
+        float currentBounciness = isCeilingHit ? ceilingBounciness : bounciness;
+
+        rb.linearVelocity = reflectedVelocity * currentBounciness;
         knockbackLockoutTimer = knockbackLockoutDuration;
 
         // Відскок означає, що ми в повітрі
@@ -126,15 +141,7 @@ public class PlayerController : MonoBehaviour
 
     private void HandleMovement()
     {
-        // (ОНОВЛЕНО): Якщо ми на землі, рух заборонено
-        if (isGrounded)
-        {
-            // Зупиняємо будь-який горизонтальний рух, що виник від ковзання
-            rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
-            return;
-        }
-
-        // (СТАРЕ): Блокування кнокбеку має вищий пріоритет
+        // Блокування кнокбеку має вищий пріоритет
         if (knockbackLockoutTimer > 0)
         {
             return;
@@ -142,12 +149,14 @@ public class PlayerController : MonoBehaviour
 
         if (!isGameActive) return;
 
+        // Логіка руху (застосовується і на землі, і в повітрі)
         if (Mathf.Abs(horizontalInput) > 0.01f)
         {
             rb.linearVelocity = new Vector2(horizontalInput * moveSpeed, rb.linearVelocity.y);
         }
         else if (useAirInertIA)
         {
+            // 'airDrag' тепер діє і як "тертя об землю"
             float slowedVelocityX = rb.linearVelocity.x * airDrag;
             rb.linearVelocity = new Vector2(slowedVelocityX, rb.linearVelocity.y);
         }
@@ -161,8 +170,6 @@ public class PlayerController : MonoBehaviour
     {
         if (jumpPressed)
         {
-            // (ВИДАЛЕНО): Перевірку на 'groundJumpOnly' видалено. Стрибати можна завжди.
-
             // Ми стрибнули, отже ми в повітрі
             isGrounded = false;
 
@@ -195,4 +202,3 @@ public class PlayerController : MonoBehaviour
 
     #endregion
 }
-

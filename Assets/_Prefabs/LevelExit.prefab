@@ -120,7 +120,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3204670859697994710}
-  - {fileID: 4638163449202420169}
   m_Father: {fileID: 2277985334680955205}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8461091600080754187
@@ -148,13 +147,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8461091600080754187}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.000000029802, z: 0}
-  m_LocalScale: {x: 0.37365147, y: 0.37365147, z: 0.37365147}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0.48145998, y: 0.48145998, z: 0.48145998}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7337622955618380407}
-  m_Father: {fileID: 683992472940710641}
+  m_Father: {fileID: 3204670859697994710}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &1443095553192231367
 SpriteRenderer:
@@ -243,7 +242,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.77608, y: 0.77608, z: 0.77608}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 4638163449202420169}
   m_Father: {fileID: 683992472940710641}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &6290026250816557247
@@ -386,7 +386,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 418c9de6ffc839e4d8c98ed826452aac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LevelExit
-  visualElement_Disabled: {fileID: 8595910636695859258}
-  visualElement_Enabled: {fileID: 8461091600080754187}
+  visualElement_Disabled: {fileID: 0}
+  visualElement_Enabled: {fileID: 8595910636695859258}
+  centeringDuration: 0.5
   activationFeedback: {fileID: 0}
   exitFeedback: {fileID: 0}
