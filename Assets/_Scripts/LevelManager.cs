@@ -4,6 +4,7 @@ using System.Collections;
 /// <summary>
 /// (НОВИЙ) Керує завантаженням, вивантаженням та перемиканням префабів рівнів.
 /// Він НЕ знає про логіку гри (очки, виходи), а лише керує префабами.
+/// (ОНОВЛЕНО): Тепер очищує клякси *перед* завантаженням нового рівня.
 /// </summary>
 public class LevelManager : MonoBehaviour
 {
@@ -52,6 +53,7 @@ public class LevelManager : MonoBehaviour
     /// <summary>
     /// **ПУБЛІЧНИЙ МЕТОД**
     /// Повністю завантажує рівень за його індексом.
+    /// (ОНОВЛЕНО): Більше не очищує клякси, це робиться в 'LoadNextLevelCoroutine'.
     /// </summary>
     public void LoadLevel(int levelIndex)
     {
@@ -69,15 +71,7 @@ public class LevelManager : MonoBehaviour
             currentLevelInstance = null;
         }
 
-        // 2. Очищуємо всі клякси
-        if (SplatManager.Instance != null)
-        {
-            SplatManager.Instance.ClearAllSplats();
-        }
-        else
-        {
-            Debug.LogError("LevelManager: Не можу знайти SplatManager для очищення клякс!");
-        }
+        // (ВИДАЛЕНО): Очищення клякс переїхало в 'LoadNextLevelCoroutine'
 
         // 3. Оновлюємо індекс
         currentLevelIndex = levelIndex;
@@ -117,6 +111,9 @@ public class LevelManager : MonoBehaviour
         StartCoroutine(LoadNextLevelCoroutine());
     }
 
+    /// <summary>
+    /// (ОНОВЛЕНО): Тепер очищує клякси і чекає, ПЕРШ НІЖ завантажити рівень.
+    /// </summary>
     private IEnumerator LoadNextLevelCoroutine()
     {
         // TODO: Тут можна додати ефект зникнення екрану
@@ -124,9 +121,20 @@ public class LevelManager : MonoBehaviour
         // Вимикаємо гравця на час переходу
         if (PlayerController.Instance != null) PlayerController.Instance.enabled = false;
 
+        // 1. Чекаємо початкову затримку (для ефекту "завершення" рівня)
         yield return new WaitForSeconds(loadNextLevelDelay);
 
-        // Завантажуємо наступний рівень
+        // 2. (НОВЕ) Запускаємо очищення клякс і чекаємо, поки воно завершиться
+        if (SplatManager.Instance != null)
+        {
+            yield return StartCoroutine(SplatManager.Instance.ClearAllSplatsCoroutine());
+        }
+        else
+        {
+            Debug.LogError("LevelManager: Не можу знайти SplatManager для очищення клякс!");
+        }
+
+        // 3. Завантажуємо наступний рівень
         LoadLevel(currentLevelIndex + 1);
     }
 

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 /// <summary>
 /// Керує кількістю клякс на сцені.
-/// (ОНОВЛЕНО): Додано метод ClearAllSplats() для очищення рівня.
+/// (ОНОВЛЕНО): ClearAllSplats тепер є корутиною, яка чекає на зникнення.
 /// </summary>
 public class SplatManager : MonoBehaviour
 {
@@ -17,6 +17,11 @@ public class SplatManager : MonoBehaviour
     [Header("Налаштування Зникнення")]
     [Tooltip("Затримка (в сек.) між початком зникнення кожної 'зайвої' клякси. Створює ефект хвилі.")]
     [SerializeField] private float waveFadeOutDelay = 0.05f;
+
+    // (НОВЕ): Загальний час зникнення клякси.
+    // 'SplatAppearance' буде використовувати це значення.
+    [Tooltip("Загальний час в секундах, за який клякса зникає (при очищенні рівня).")]
+    [SerializeField] public float splatFadeOutDuration = 0.3f;
 
     private Queue<SplatAppearance> splatsQueue = new Queue<SplatAppearance>();
     private Coroutine queueManagerCoroutine;
@@ -94,11 +99,10 @@ public class SplatManager : MonoBehaviour
     }
 
     /// <summary>
-    /// **(НОВИЙ) ПУБЛІЧНИЙ МЕТОД**
-    /// Негайно запускає зникнення ВСІХ клякс на сцені та очищує чергу.
-    /// Викликається з LevelManager при завантаженні нового рівня.
+    /// **(ОНОВЛЕНО) ПУБЛІЧНА КОРУТИНА**
+    /// Запускає зникнення ВСІХ клякс і ЧЕКАЄ на їх повне зникнення.
     /// </summary>
-    public void ClearAllSplats()
+    public IEnumerator ClearAllSplatsCoroutine()
     {
         // 1. Зупиняємо корутину, щоб вона не конфліктувала з очищенням
         if (queueManagerCoroutine != null)
@@ -107,19 +111,25 @@ public class SplatManager : MonoBehaviour
         }
 
         // 2. Проходимо по всіх кляксах в черзі і запускаємо їх зникнення
-        foreach (SplatAppearance splat in splatsQueue)
+        if (splatsQueue.Count > 0)
         {
-            if (splat != null)
+            foreach (SplatAppearance splat in splatsQueue)
             {
-                // Викликаємо зникнення (скрипт 'SplatAppearance' сам себе знищить)
-                splat.StartFadeOutAndDestroy();
+                if (splat != null)
+                {
+                    // Викликаємо зникнення (скрипт 'SplatAppearance' сам себе знищить)
+                    splat.StartFadeOutAndDestroy();
+                }
             }
+
+            // 3. (НОВЕ) Чекаємо, поки вони зникнуть
+            yield return new WaitForSeconds(splatFadeOutDuration);
         }
 
-        // 3. Очищуємо саму чергу
+        // 4. Очищуємо саму чергу
         splatsQueue.Clear();
 
-        // 4. (ВАЖЛИВО) Перезапускаємо корутину, щоб вона була готова до нового рівня
+        // 5. (ВАЖЛИВО) Перезапускаємо корутину, щоб вона була готова до нового рівня
         queueManagerCoroutine = StartCoroutine(ManageSplatQueue());
     }
 }

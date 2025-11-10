@@ -4,6 +4,7 @@ using UnityEngine;
 /// <summary>
 /// Керує візуальною частиною клякси: вибирає випадковий спрайт,
 /// задає поворот/масштаб та анімує появу/зникнення через шейдер "розчинення".
+/// (ОНОВЛЕНО): Тепер бере час зникнення (fadeOutDuration) з SplatManager.
 /// </summary>
 [RequireComponent(typeof(SpriteRenderer))]
 public class SplatAppearance : MonoBehaviour
@@ -36,8 +37,9 @@ public class SplatAppearance : MonoBehaviour
     [SerializeField] private float appearDuration = 0.5f;
     [Tooltip("Матеріал, який буде встановлено *після* завершення ефекту появи (для оптимізації).")]
     [SerializeField] private Material finalMaterial;
-    [Tooltip("Час в секундах, за який клякса зникне (при видаленні).")]
-    [SerializeField] private float fadeOutDuration = 0.3f; // (НОВЕ)
+
+    // (ВИДАЛЕНО): 'fadeOutDuration' тепер береться з SplatManager
+    // [SerializeField] private float fadeOutDuration = 0.3f; 
 
     // --- Внутрішні змінні ---
     private SpriteRenderer spriteRenderer;
@@ -156,7 +158,7 @@ public class SplatAppearance : MonoBehaviour
         isFadingOut = true;
 
         // Перевіряємо, чи є в нас матеріал для "зникнення"
-        if (originalFadeMaterialAsset != null)
+        if (originalFadeMaterialAsset != null && SplatManager.Instance != null)
         {
             StartCoroutine(FadeOutCoroutine());
         }
@@ -169,6 +171,7 @@ public class SplatAppearance : MonoBehaviour
 
     /// <summary>
     /// Корутина, що плавно змінює значення "_Fade" від 1 до 0 для зникнення.
+    /// (ОНОВЛЕНО): Бере час зникнення з SplatManager.
     /// </summary>
     private IEnumerator FadeOutCoroutine()
     {
@@ -184,10 +187,13 @@ public class SplatAppearance : MonoBehaviour
 
         // 4. Анімуємо зникнення
         float elapsedTime = 0f;
-        while (elapsedTime < fadeOutDuration)
+        // (ОНОВЛЕНО): Використовуємо час з SplatManager
+        float duration = SplatManager.Instance.splatFadeOutDuration;
+
+        while (elapsedTime < duration)
         {
             elapsedTime += Time.deltaTime;
-            float fadeValue = Mathf.Lerp(1f, 0f, elapsedTime / fadeOutDuration);
+            float fadeValue = Mathf.Lerp(1f, 0f, elapsedTime / duration);
             fadeOutInstance.SetFloat(FadePropertyID, fadeValue);
             yield return null;
         }
@@ -199,4 +205,3 @@ public class SplatAppearance : MonoBehaviour
         Destroy(gameObject);
     }
 }
-
